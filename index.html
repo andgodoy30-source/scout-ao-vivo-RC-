@@ -12,7 +12,7 @@ h1{font-size:21px;margin:0 0 10px}.teams{display:grid;grid-template-columns:1fr 
 input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:white;font-size:16px}
 .score{font-size:25px;font-weight:bold;white-space:nowrap}.clock{text-align:center;font-size:42px;font-weight:bold;margin:8px 0}
 .period{text-align:center;color:var(--muted);font-weight:bold}.controls,.events,.footer{display:grid;gap:8px}
-.controls{grid-template-columns:repeat(4,1fr)}.events{grid-template-columns:repeat(2,1fr)}.footer{grid-template-columns:repeat(3,1fr)}
+.controls{grid-template-columns:repeat(4,1fr)}.events{grid-template-columns:repeat(2,1fr)}.footer{grid-template-columns:repeat(2,1fr)}
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;border:0;border-radius:12px;padding:14px 8px;font-weight:bold;font-size:15px;color:white;background:#334155;min-height:52px}
 button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{background:var(--green)}.red{background:var(--red)}
 .blue{background:var(--blue)}.amber{background:var(--amber)}.goal{background:#7c3aed}
@@ -27,16 +27,40 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 .submenu-options button{min-height:72px;font-size:18px}
 .submenu-cancel{width:100%;margin-top:10px;background:#475569}
 
+
+.report-overlay{position:fixed;inset:0;background:#0f172a;display:none;z-index:10000;overflow:auto;padding:12px}
+.report-sheet{max-width:760px;margin:auto;background:white;color:#111827;border-radius:16px;padding:18px}
+.report-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:2px solid #e5e7eb;padding-bottom:12px;margin-bottom:14px}
+.report-title{font-size:22px;font-weight:800}.report-score{font-size:28px;font-weight:800}
+.report-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.report-card{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.report-card h3{margin:0 0 8px;font-size:15px}.report-big{font-size:28px;font-weight:800}
+.bar{height:12px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:6px 0 2px}.bar span{display:block;height:100%;background:#334155}
+.report-table{width:100%;border-collapse:collapse;margin-top:12px}.report-table th,.report-table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:13px}
+.insights{margin-top:12px;padding:12px;background:#f8fafc;border-radius:12px}.insights p{margin:6px 0;font-size:14px}
+.report-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.report-actions button{min-height:44px}
+@media(max-width:520px){.report-grid{grid-template-columns:1fr}.report-actions{grid-template-columns:1fr}.report-sheet{border-radius:0;padding:14px}}
+@media print{body>*:not(.report-overlay){display:none!important}.report-overlay{display:block!important;position:static;padding:0;background:white}.report-sheet{max-width:none;border-radius:0}.report-actions{display:none!important}}
+
 </style>
 
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0f172a">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Scout ao Vivo">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 
 </head>
-<body><div class="wrap">
+<body>
+
+<div id="installBar" style="display:none;position:sticky;top:0;z-index:9998;background:#111827;border-bottom:1px solid #334155;padding:8px;text-align:center">
+  <button id="installBtn" style="background:#16a34a;min-height:42px;padding:9px 14px">📲 INSTALAR SCOUT</button>
+  <span id="netStatus" class="small" style="margin-left:8px">Online</span>
+</div>
+<div class="wrap">
 <div class="card">
 <h1>⚽ SCOUT AO VIVO</h1>
 <div class="teams"><input id="home" value="Rio Claro"><div class="score"><span id="hs">0</span> × <span id="as">0</span></div><input id="away" value="Adversário"></div>
@@ -63,7 +87,7 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <div class="card"><b>CONTADORES</b><div id="stats" class="stats" style="margin-top:8px"></div></div>
 <div class="card"><b>ÚLTIMOS EVENTOS</b><div id="history" class="history"><div class="small" style="padding:8px">Nenhum evento registrado.</div></div></div>
 <div class="footer">
-<button data-action="undo">↶ DESFAZER</button><button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button><button id="clearBtn" data-action="clearAll">🗑 LIMPAR</button>
+<button data-action="undo">↶ DESFAZER</button><button class="blue" data-action="report">📊 RELATÓRIO</button><button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button><button id="clearBtn" data-action="clearAll">🗑 LIMPAR</button>
 </div>
 
 <div id="compatStatus" class="small" style="text-align:center;margin:8px 0;padding:8px;border:1px solid #334155;border-radius:8px">
@@ -77,6 +101,34 @@ Carregando controles…
     <div id="submenuTitle" class="submenu-title">Selecionar</div>
     <div id="submenuOptions" class="submenu-options"></div>
     <button class="submenu-cancel" data-action="closeSubmenu">CANCELAR</button>
+  </div>
+</div>
+
+
+<div id="reportOverlay" class="report-overlay">
+  <div class="report-sheet" id="reportSheet">
+    <div class="report-head">
+      <div>
+        <div class="report-title">Relatório do Intervalo</div>
+        <div id="reportTeams" style="font-weight:700;margin-top:4px"></div>
+        <div id="reportPeriod" style="font-size:13px;color:#64748b"></div>
+      </div>
+      <div class="report-score" id="reportScore">0 × 0</div>
+    </div>
+    <div id="reportGrid" class="report-grid"></div>
+    <div class="insights">
+      <b>Destaques automáticos</b>
+      <div id="reportInsights"></div>
+    </div>
+    <table class="report-table">
+      <thead><tr><th>Indicador</th><th>Total</th><th>Detalhamento</th></tr></thead>
+      <tbody id="reportTableBody"></tbody>
+    </table>
+    <div class="report-actions">
+      <button class="blue" data-action="shareReport">📤 COMPARTILHAR</button>
+      <button data-action="printReport">🖨 IMPRIMIR / PDF</button>
+      <button data-action="closeReport">FECHAR</button>
+    </div>
   </div>
 </div>
 
@@ -186,6 +238,10 @@ function handleAction(el){
   else if(action==='resetClock') resetClock();
   else if(action==='undo') undo();
   else if(action==='downloadCSV') downloadCSV();
+  else if(action==='report') openReport();
+  else if(action==='shareReport') shareReport();
+  else if(action==='printReport') window.print();
+  else if(action==='closeReport') closeReport();
   else if(action==='clearAll') clearAll();
   else if(action==='goal') goal();
   else if(action==='add') add(el.dataset.type);
@@ -223,12 +279,142 @@ window.addEventListener('load',()=>{
   s.textContent='✅ Controles carregados — toque em INICIAR para testar.';
 });
 
+
+function subsetForPeriod(p){
+  return events.filter(e=>e.periodo===p+'ºT');
+}
+function countEvent(arr,type,detail){
+  return arr.filter(e=>e.evento===type && (!detail || e.detalhe===detail)).length;
+}
+function pct(a,b){return b?Math.round((a/b)*100):0}
+function reportCard(title,total,leftLabel,leftVal,rightLabel,rightVal){
+  let extra='';
+  if(leftLabel||rightLabel){
+    const denom=(leftVal||0)+(rightVal||0);
+    extra=`<div class="small">${leftLabel||''}: <b>${leftVal||0}</b> &nbsp; ${rightLabel||''}: <b>${rightVal||0}</b></div>`;
+    if(denom){
+      extra+=`<div class="bar"><span style="width:${pct(leftVal,denom)}%"></span></div><div class="small">${pct(leftVal,denom)}% ${leftLabel||''}</div>`;
+    }
+  }
+  return `<div class="report-card"><h3>${title}</h3><div class="report-big">${total}</div>${extra}</div>`;
+}
+function openReport(){
+  pause();
+  const p=period===2?1:period; // intervalo usa 1ºT; se estiver no 1ºT, usa o período atual
+  const arr=subsetForPeriod(p);
+  const fin=countEvent(arr,'Finalização');
+  const finAlvo=countEvent(arr,'Finalização','No alvo');
+  const finFora=countEvent(arr,'Finalização','Fora');
+  const esc=countEvent(arr,'Escanteio');
+  const escFav=countEvent(arr,'Escanteio','A favor');
+  const escCon=countEvent(arr,'Escanteio','Contra');
+  const falt=countEvent(arr,'Falta');
+  const faltFav=countEvent(arr,'Falta','A favor');
+  const faltCon=countEvent(arr,'Falta','Contra');
+  const sb=countEvent(arr,'Saída de bola');
+  const sbCurta=countEvent(arr,'Saída de bola','Curta');
+  const sbLonga=countEvent(arr,'Saída de bola','Longa');
+  const rec=countEvent(arr,'Recuperação');
+  const perda=countEvent(arr,'Perda');
+  const to=countEvent(arr,'Transição ofensiva');
+  const td=countEvent(arr,'Transição defensiva');
+  const pk=countEvent(arr,'Passe-chave');
+  const err=countEvent(arr,'Erro defensivo');
+
+  document.getElementById('reportTeams').textContent=(document.getElementById('home').value||'Equipe')+' x '+(document.getElementById('away').value||'Adversário');
+  document.getElementById('reportScore').textContent=document.getElementById('hs').textContent+' × '+document.getElementById('as').textContent;
+  document.getElementById('reportPeriod').textContent=p+'º tempo';
+  document.getElementById('reportGrid').innerHTML=[
+    reportCard('Finalizações',fin,'No alvo',finAlvo,'Fora',finFora),
+    reportCard('Saídas de bola',sb,'Curtas',sbCurta,'Longas',sbLonga),
+    reportCard('Escanteios',esc,'A favor',escFav,'Contra',escCon),
+    reportCard('Faltas',falt,'A favor',faltFav,'Contra',faltCon),
+    reportCard('Recuperações',rec),
+    reportCard('Perdas',perda),
+    reportCard('Transições ofensivas',to),
+    reportCard('Transições defensivas',td)
+  ].join('');
+
+  const rows=[
+    ['Finalizações',fin,`${finAlvo} no alvo / ${finFora} fora`],
+    ['Escanteios',esc,`${escFav} a favor / ${escCon} contra`],
+    ['Faltas',falt,`${faltFav} a favor / ${faltCon} contra`],
+    ['Saídas de bola',sb,`${sbCurta} curtas / ${sbLonga} longas`],
+    ['Recuperações',rec,'—'],
+    ['Perdas',perda,'—'],
+    ['Transições ofensivas',to,'—'],
+    ['Transições defensivas',td,'—'],
+    ['Passes-chave',pk,'—'],
+    ['Erros defensivos',err,'—']
+  ];
+  document.getElementById('reportTableBody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
+
+  const insights=[];
+  if(fin) insights.push(`Finalização: ${pct(finAlvo,fin)}% das finalizações foram no alvo.`);
+  if(sb) insights.push(`Saída de bola: ${pct(sbCurta,sb)}% das saídas registradas foram curtas.`);
+  if(esc) insights.push(`Escanteios: ${escFav} a favor e ${escCon} contra.`);
+  if(rec||perda) insights.push(`Balanço de posse: ${rec} recuperações e ${perda} perdas registradas.`);
+  if(to||td) insights.push(`Transições: ${to} ofensivas e ${td} defensivas registradas.`);
+  if(!insights.length) insights.push('Ainda não há eventos suficientes para gerar destaques.');
+  document.getElementById('reportInsights').innerHTML=insights.map(x=>`<p>• ${x}</p>`).join('');
+  document.getElementById('reportOverlay').style.display='block';
+}
+function closeReport(){document.getElementById('reportOverlay').style.display='none'}
+async function shareReport(){
+  const p=period===2?1:period;
+  const arr=subsetForPeriod(p);
+  const fin=countEvent(arr,'Finalização'), finAlvo=countEvent(arr,'Finalização','No alvo'), finFora=countEvent(arr,'Finalização','Fora');
+  const esc=countEvent(arr,'Escanteio'), escFav=countEvent(arr,'Escanteio','A favor'), escCon=countEvent(arr,'Escanteio','Contra');
+  const falt=countEvent(arr,'Falta'), faltFav=countEvent(arr,'Falta','A favor'), faltCon=countEvent(arr,'Falta','Contra');
+  const sb=countEvent(arr,'Saída de bola'), sbCurta=countEvent(arr,'Saída de bola','Curta'), sbLonga=countEvent(arr,'Saída de bola','Longa');
+  const rec=countEvent(arr,'Recuperação'), perda=countEvent(arr,'Perda');
+  const text=`RELATÓRIO DO INTERVALO\n${document.getElementById('home').value} ${document.getElementById('hs').textContent} x ${document.getElementById('as').textContent} ${document.getElementById('away').value}\n\nFinalizações: ${fin} (${finAlvo} no alvo / ${finFora} fora)\nEscanteios: ${escFav} a favor / ${escCon} contra\nFaltas: ${faltFav} a favor / ${faltCon} contra\nSaídas de bola: ${sbCurta} curtas / ${sbLonga} longas\nRecuperações: ${rec}\nPerdas: ${perda}`;
+  if(navigator.share){
+    try{await navigator.share({title:'Relatório do Intervalo',text});}catch(e){}
+  }else{
+    await navigator.clipboard.writeText(text);
+    alert('Resumo copiado. Cole no WhatsApp ou outro aplicativo.');
+  }
+}
+
 load();renderClock();
 </script>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW:', err));
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  const bar=document.getElementById('installBar');
+  if(bar) bar.style.display='block';
+});
+window.addEventListener('appinstalled',()=>{
+  const bar=document.getElementById('installBar');
+  if(bar) bar.style.display='none';
+});
+window.addEventListener('load',()=>{
+  const installBtn=document.getElementById('installBtn');
+  if(installBtn){
+    installBtn.addEventListener('click', async ()=>{
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt=null;
+      } else {
+        alert('Se a instalação não aparecer automaticamente, use o menu do navegador e procure por "Adicionar à tela inicial".');
+      }
+    });
+  }
+  function updateNet(){
+    const n=document.getElementById('netStatus');
+    if(n) n.textContent=navigator.onLine?'🟢 Online':'🟠 Offline';
+  }
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(()=>console.log('SW ok')).catch(console.error);
   });
 }
 </script>
