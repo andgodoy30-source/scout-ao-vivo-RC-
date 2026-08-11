@@ -69,6 +69,15 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 .report-badge{display:inline-block;background:#173f2a;color:#fff;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;letter-spacing:.4px;margin-bottom:5px}
 .report-note{font-size:11px;color:#64748b;margin-top:10px;text-align:center}
 
+
+.image-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:12000;overflow:auto;padding:12px}
+.image-preview-box{max-width:780px;margin:auto;text-align:center}
+.image-preview-box img{width:100%;height:auto;background:white;border-radius:12px;display:block}
+.image-preview-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px auto 18px}
+.image-preview-actions button{min-height:48px}
+.version-tag{font-size:10px;color:#94a3b8;text-align:center;margin:4px 0 8px}
+@media(max-width:520px){.image-preview-actions{grid-template-columns:1fr}}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -120,7 +129,7 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <div id="compatStatus" class="small" style="text-align:center;margin:8px 0;padding:8px;border:1px solid #334155;border-radius:8px">
 Carregando controles…
 </div>
-<div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
+<div class="version-tag">Scout ao Vivo • V4.2</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
 <div id="submenuOverlay" class="submenu-overlay" >
@@ -155,6 +164,21 @@ Carregando controles…
       <button class="blue" data-action="shareReport">📤 COMPARTILHAR</button><button class="green" data-action="imageReport">🖼 GERAR IMAGEM</button>
       <button data-action="printReport">🖨 IMPRIMIR / PDF</button>
       <button data-action="closeReport">FECHAR</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="imagePreviewOverlay" class="image-preview-overlay">
+  <div class="image-preview-box">
+    <img id="generatedReportImage" alt="Relatório do intervalo">
+    <div class="image-preview-actions">
+      <button class="green" data-action="shareGeneratedImage">📤 COMPARTILHAR IMAGEM</button>
+      <button class="blue" data-action="downloadGeneratedImage">⬇ BAIXAR PNG</button>
+      <button data-action="closeImagePreview">FECHAR</button>
+    </div>
+    <div class="small" style="color:#cbd5e1;padding-bottom:20px">
+      Se preferir, toque e segure a imagem para usar as opções do Android.
     </div>
   </div>
 </div>
@@ -268,6 +292,9 @@ function handleAction(el){
   else if(action==='report') openReport();
   else if(action==='shareReport') shareReport();
   else if(action==='imageReport') imageReport();
+  else if(action==='shareGeneratedImage') shareGeneratedImage();
+  else if(action==='downloadGeneratedImage') downloadGeneratedImage();
+  else if(action==='closeImagePreview') closeImagePreview();
   else if(action==='printReport') window.print();
   else if(action==='closeReport') closeReport();
   else if(action==='clearAll') clearAll();
@@ -389,7 +416,10 @@ function openReport(){
 }
 function closeReport(){document.getElementById('reportOverlay').style.display='none'}
 
-async function imageReport(){
+
+let generatedImageDataUrl='';
+
+function imageReport(){
   try{
     const p=period===2?1:period;
     const arr=subsetForPeriod(p);
@@ -422,7 +452,6 @@ async function imageReport(){
 
     ctx.fillStyle='#f4f7f5';
     ctx.fillRect(0,0,W,H);
-
     for(let i=0;i<8;i++){
       ctx.fillStyle=i%2===0?'#edf4ef':'#f7faf8';
       ctx.fillRect(i*(W/8),0,W/8,H);
@@ -436,7 +465,7 @@ async function imageReport(){
     ctx.font='800 46px Arial';
     ctx.fillText('RELATÓRIO DO INTERVALO',54,112);
     ctx.font='600 27px Arial';
-    ctx.fillText(homeName+'  '+score+'  '+awayName,54,160);
+    fitText(ctx,homeName+'  '+score+'  '+awayName,54,160,970,27);
     ctx.font='400 20px Arial';
     ctx.fillText(p+'º TEMPO',54,190);
 
@@ -469,7 +498,7 @@ async function imageReport(){
       if(c[2]){
         ctx.fillStyle='#607067';
         ctx.font='400 18px Arial';
-        ctx.fillText(c[2],x+22,y+119);
+        fitText(ctx,c[2],x+22,y+119,cw-44,18);
       }
     });
 
@@ -477,26 +506,8 @@ async function imageReport(){
     ctx.font='800 26px Arial';
     ctx.fillText('INDICADORES-CHAVE',54,950);
 
-    function drawBar(label,a,b,aLabel,bLabel,yPos){
-      const total=a+b;
-      const ratio=total?a/total:0;
-      ctx.fillStyle='#263d30';
-      ctx.font='700 20px Arial';
-      ctx.fillText(label,54,yPos);
-      ctx.fillStyle='#dce7df';
-      roundRect(ctx,54,yPos+18,972,28,14,true,false);
-      if(total){
-        ctx.fillStyle='#2e6848';
-        roundRect(ctx,54,yPos+18,972*ratio,28,14,true,false);
-      }
-      ctx.fillStyle='#52635a';
-      ctx.font='400 18px Arial';
-      const pctA=total?Math.round(ratio*100):0;
-      ctx.fillText(`${aLabel}: ${a} (${pctA}%)   •   ${bLabel}: ${b}`,54,yPos+72);
-    }
-
-    drawBar('Finalizações',finAlvo,finFora,'No alvo','Fora',995);
-    drawBar('Saída de bola',sbCurta,sbLonga,'Curta','Longa',1110);
+    drawCanvasBar(ctx,'Finalizações',finAlvo,finFora,'No alvo','Fora',995);
+    drawCanvasBar(ctx,'Saída de bola',sbCurta,sbLonga,'Curta','Longa',1110);
 
     ctx.fillStyle='#173f2a';
     ctx.font='800 26px Arial';
@@ -519,33 +530,82 @@ async function imageReport(){
     ctx.font='400 16px Arial';
     ctx.fillText('Scout ao Vivo • Relatório gerado a partir dos eventos registrados na partida.',54,1550);
 
-    canvas.toBlob(async blob=>{
-      if(!blob){
-        alert('Não foi possível gerar a imagem neste navegador.');
-        return;
-      }
-      const filename='relatorio_intervalo_'+homeName.replace(/\s+/g,'_')+'.png';
-      const file=new File([blob],filename,{type:'image/png'});
-
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{
-          await navigator.share({files:[file],title:'Relatório do Intervalo'});
-          return;
-        }catch(e){}
-      }
-
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
-    },'image/png',0.95);
+    generatedImageDataUrl=canvas.toDataURL('image/png');
+    document.getElementById('generatedReportImage').src=generatedImageDataUrl;
+    document.getElementById('imagePreviewOverlay').style.display='block';
   }catch(e){
     console.error(e);
-    alert('Erro ao gerar imagem. Tente novamente ou use Imprimir / PDF.');
+    alert('Erro ao gerar imagem: '+(e && e.message ? e.message : 'erro desconhecido'));
   }
+}
+
+function drawCanvasBar(ctx,label,a,b,aLabel,bLabel,yPos){
+  const total=a+b;
+  const ratio=total?a/total:0;
+  ctx.fillStyle='#263d30';
+  ctx.font='700 20px Arial';
+  ctx.fillText(label,54,yPos);
+  ctx.fillStyle='#dce7df';
+  roundRect(ctx,54,yPos+18,972,28,14,true,false);
+  if(total){
+    ctx.fillStyle='#2e6848';
+    roundRect(ctx,54,yPos+18,972*ratio,28,14,true,false);
+  }
+  ctx.fillStyle='#52635a';
+  ctx.font='400 18px Arial';
+  const pctA=total?Math.round(ratio*100):0;
+  ctx.fillText(`${aLabel}: ${a} (${pctA}%)   •   ${bLabel}: ${b}`,54,yPos+72);
+}
+
+function fitText(ctx,text,x,y,maxWidth,startSize){
+  let size=startSize;
+  while(size>12){
+    ctx.font=`600 ${size}px Arial`;
+    if(ctx.measureText(text).width<=maxWidth) break;
+    size--;
+  }
+  ctx.fillText(text,x,y);
+}
+
+function dataUrlToBlob(dataUrl){
+  const parts=dataUrl.split(',');
+  const mime=parts[0].match(/:(.*?);/)[1];
+  const bin=atob(parts[1]);
+  const len=bin.length;
+  const arr=new Uint8Array(len);
+  for(let i=0;i<len;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+
+async function shareGeneratedImage(){
+  if(!generatedImageDataUrl){alert('Gere a imagem primeiro.');return;}
+  try{
+    const blob=dataUrlToBlob(generatedImageDataUrl);
+    const name=(document.getElementById('home').value||'equipe').replace(/\s+/g,'_');
+    const file=new File([blob],`relatorio_intervalo_${name}.png`,{type:'image/png'});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({files:[file],title:'Relatório do Intervalo'});
+    }else{
+      alert('Compartilhamento de arquivo não disponível. Use BAIXAR PNG.');
+    }
+  }catch(e){
+    if(e && e.name!=='AbortError') alert('Não foi possível compartilhar. Use BAIXAR PNG.');
+  }
+}
+
+function downloadGeneratedImage(){
+  if(!generatedImageDataUrl){alert('Gere a imagem primeiro.');return;}
+  const name=(document.getElementById('home').value||'equipe').replace(/\s+/g,'_');
+  const a=document.createElement('a');
+  a.href=generatedImageDataUrl;
+  a.download=`relatorio_intervalo_${name}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function closeImagePreview(){
+  document.getElementById('imagePreviewOverlay').style.display='none';
 }
 
 function roundRect(ctx,x,y,w,h,r,fill,stroke){

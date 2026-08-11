@@ -1,4 +1,4 @@
-const CACHE='scout-aovivo-v4-1-imagem';
+const CACHE='scout-aovivo-v4-2-preview';
 const ASSETS=[
   './',
   './index.html',
