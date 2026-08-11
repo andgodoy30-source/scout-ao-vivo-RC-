@@ -1,4 +1,4 @@
-const CACHE='scout-aovivo-v3-relatorio';
+const CACHE='scout-aovivo-v4-futebol';
 const ASSETS=[
   './',
   './index.html',
