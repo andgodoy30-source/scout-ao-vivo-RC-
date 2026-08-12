@@ -2,14 +2,10 @@
   "id": "./",
   "name": "Scout ao Vivo",
   "short_name": "Scout",
-  "description": "Painel offline de scout para análise de futebol.",
+  "description": "Painel de scout e análise de futebol.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
-  ],
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
