@@ -97,6 +97,13 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 
 #installScoutBtn{display:none;width:100%;margin:8px 0 0;min-height:44px;background:#2563eb;font-weight:800}
 
+
+.pwa-diagnostic{margin:10px 0;padding:10px;border:1px solid #334155;border-radius:10px;background:#0b1220;font-size:12px}
+.pwa-diagnostic b{display:block;margin-bottom:6px}
+.diag-row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid #1e293b}
+.diag-row:last-child{border-bottom:0}
+.diag-ok{color:#22c55e}.diag-bad{color:#ef4444}.diag-warn{color:#f59e0b}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -165,8 +172,19 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <div id="compatStatus" class="small" style="text-align:center;margin:8px 0;padding:8px;border:1px solid #334155;border-radius:8px">
 Carregando controles…
 </div>
+
+<div id="pwaDiagnostic" class="pwa-diagnostic">
+  <b>Diagnóstico PWA</b>
+  <div class="diag-row"><span>HTTPS</span><span id="diagHttps">...</span></div>
+  <div class="diag-row"><span>Manifesto</span><span id="diagManifest">...</span></div>
+  <div class="diag-row"><span>Service Worker</span><span id="diagSw">...</span></div>
+  <div class="diag-row"><span>Controlado pelo SW</span><span id="diagControlled">...</span></div>
+  <div class="diag-row"><span>Offline cache</span><span id="diagCache">...</span></div>
+  <div class="diag-row"><span>Prompt de instalação</span><span id="diagPrompt">Aguardando...</span></div>
+</div>
+
 <button id="installScoutBtn" type="button">📲 INSTALAR SCOUT NO TABLET</button>
-<div class="version-tag">Scout ao Vivo • V5.5 • PWA corrigida</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
+<div class="version-tag">Scout ao Vivo • V5.6 • Diagnóstico PWA</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
 <div id="submenuOverlay" class="submenu-overlay" >
@@ -848,6 +866,71 @@ if('serviceWorker' in navigator){
       .catch(err=>console.error('Falha ao registrar Service Worker:',err));
   });
 }
+
+
+function diagSet(id,text,state){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=text;
+  el.className=state==='ok'?'diag-ok':state==='bad'?'diag-bad':'diag-warn';
+}
+
+async function runPwaDiagnostic(){
+  diagSet('diagHttps',location.protocol==='https:'?'OK':location.protocol,location.protocol==='https:'?'ok':'bad');
+
+  try{
+    const link=document.querySelector('link[rel="manifest"]');
+    if(!link){diagSet('diagManifest','Não encontrado','bad');}
+    else{
+      const res=await fetch(link.href,{cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const man=await res.json();
+      const pathOk=(man.start_url||'').includes('scout-ao-vivo-RC-');
+      const iconsOk=Array.isArray(man.icons)&&man.icons.some(i=>String(i.sizes).includes('192'))&&man.icons.some(i=>String(i.sizes).includes('512'));
+      diagSet('diagManifest',pathOk&&iconsOk?'OK':'Revisar start_url/ícones',pathOk&&iconsOk?'ok':'bad');
+    }
+  }catch(e){diagSet('diagManifest','Erro: '+e.message,'bad');}
+
+  if(!('serviceWorker' in navigator)){
+    diagSet('diagSw','Não suportado','bad');
+    diagSet('diagControlled','Não','bad');
+  }else{
+    try{
+      const reg=await navigator.serviceWorker.getRegistration();
+      diagSet('diagSw',reg?'Registrado':'Não registrado',reg?'ok':'bad');
+      diagSet('diagControlled',navigator.serviceWorker.controller?'Sim':'Não',navigator.serviceWorker.controller?'ok':'warn');
+    }catch(e){diagSet('diagSw','Erro','bad');}
+  }
+
+  if('caches' in window){
+    try{
+      const keys=await caches.keys();
+      const ok=keys.some(k=>k.includes('scout-aovivo'));
+      diagSet('diagCache',ok?'Disponível':'Ainda não',ok?'ok':'warn');
+    }catch(e){diagSet('diagCache','Erro','bad');}
+  }else{
+    diagSet('diagCache','Não suportado','bad');
+  }
+
+  diagSet('diagPrompt',deferredInstallPrompt?'Liberado pelo Chrome':'Não disparou',deferredInstallPrompt?'ok':'warn');
+}
+
+window.addEventListener('beforeinstallprompt',()=>{
+  setTimeout(()=>{
+    diagSet('diagPrompt','Liberado pelo Chrome','ok');
+    const btn=document.getElementById('installScoutBtn');
+    if(btn) btn.style.display='block';
+  },0);
+});
+
+window.addEventListener('appinstalled',()=>{
+  diagSet('diagPrompt','App instalado','ok');
+});
+
+window.addEventListener('load',()=>{
+  setTimeout(runPwaDiagnostic,1200);
+  setTimeout(runPwaDiagnostic,4000);
+});
 
 </script>
 <script>

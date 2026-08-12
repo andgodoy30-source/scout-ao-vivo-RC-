@@ -1,4 +1,4 @@
-const CACHE='scout-aovivo-v5-5-install-fix';
+const CACHE='scout-aovivo-v5-6-diagnostic';
 const APP_SCOPE='/scout-ao-vivo-RC-/';
 const ASSETS=[
   './',
