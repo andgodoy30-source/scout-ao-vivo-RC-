@@ -1,14 +1,15 @@
 {
-  "id": "/scout-ao-vivo-RC/",
+  "id": "/scout-ao-vivo-RC-/",
   "name": "Scout ao Vivo",
-  "short_name": "Scout ao Vivo",
-  "description": "Painel de scout e análise de desempenho no futebol.",
-  "start_url": "/scout-ao-vivo-RC/",
-  "scope": "/scout-ao-vivo-RC/",
+  "short_name": "Scout",
+  "description": "Painel offline de scout e análise de desempenho no futebol.",
+  "start_url": "/scout-ao-vivo-RC-/",
+  "scope": "/scout-ao-vivo-RC-/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "./icon-192.png",
@@ -21,6 +22,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
