@@ -94,6 +94,9 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 
 .auto-posse-note{font-size:10px;color:#94a3b8;text-align:center;margin-top:6px;line-height:1.35}
 
+
+#installScoutBtn{display:none;width:100%;margin:8px 0 0;min-height:44px;background:#2563eb;font-weight:800}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -162,7 +165,8 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <div id="compatStatus" class="small" style="text-align:center;margin:8px 0;padding:8px;border:1px solid #334155;border-radius:8px">
 Carregando controles…
 </div>
-<div class="version-tag">Scout ao Vivo • V5.3 • Posse automática</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
+<button id="installScoutBtn" type="button">📲 INSTALAR SCOUT NO TABLET</button>
+<div class="version-tag">Scout ao Vivo • V5.4 • Instalação PWA</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
 <div id="submenuOverlay" class="submenu-overlay" >
@@ -808,6 +812,43 @@ async function shareReport(){
 }
 
 load();renderClock();
+
+let deferredInstallPrompt=null;
+
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  const btn=document.getElementById('installScoutBtn');
+  if(btn) btn.style.display='block';
+});
+
+window.addEventListener('appinstalled', ()=>{
+  deferredInstallPrompt=null;
+  const btn=document.getElementById('installScoutBtn');
+  if(btn) btn.style.display='none';
+});
+
+document.addEventListener('click', async (e)=>{
+  const btn=e.target.closest('#installScoutBtn');
+  if(!btn) return;
+  if(!deferredInstallPrompt){
+    alert('O Chrome ainda não liberou a instalação. Atualize a página uma vez e aguarde alguns segundos.');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  try{ await deferredInstallPrompt.userChoice; }catch(err){}
+  deferredInstallPrompt=null;
+  btn.style.display='none';
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js', {scope:'./'})
+      .then(reg=>reg.update())
+      .catch(err=>console.error('Falha ao registrar Service Worker:',err));
+  });
+}
+
 </script>
 <script>
 let deferredPrompt=null;
