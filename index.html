@@ -104,6 +104,17 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 .diag-row:last-child{border-bottom:0}
 .diag-ok{color:#22c55e}.diag-bad{color:#ef4444}.diag-warn{color:#f59e0b}
 
+
+.final-overlay{position:fixed;inset:0;background:#07130d;display:none;z-index:13000;overflow:auto;padding:12px}
+.final-sheet{max-width:820px;margin:auto;background:#fff;color:#111827;border-radius:16px;padding:16px}
+.final-sheet h2{margin:0 0 4px;color:#173f2a}.final-sub{color:#64748b;margin-bottom:12px}
+.final-table{width:100%;border-collapse:collapse;font-size:13px}
+.final-table th{background:#173f2a;color:#fff;padding:9px;text-align:center}
+.final-table td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:center}
+.final-table td:first-child{text-align:left;font-weight:700}
+.final-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+@media(max-width:520px){.final-sheet{border-radius:0;padding:10px}.final-table{font-size:11px}.final-table th,.final-table td{padding:7px 4px}}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -131,6 +142,11 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <button class="green" data-action="start">▶ INICIAR</button><button data-action="pause">⏸ PAUSAR</button>
 <button class="blue" data-action="nextPeriod">2º TEMPO</button><button data-action="resetClock">↺ ZERAR</button>
 </div></div>
+
+
+<div id="halfSavedBadge" class="small" style="display:none;text-align:center;margin:8px 0;padding:8px;border:1px solid #16a34a;border-radius:8px;color:#bbf7d0">
+✅ 1º tempo salvo automaticamente
+</div>
 
 <div class="card"><div class="events">
 <button class="event green" data-action="add" data-type="Recuperação">🟢 RECUPERAÇÃO</button>
@@ -166,25 +182,33 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <div class="card"><b>CONTADORES</b><div id="stats" class="stats" style="margin-top:8px"></div></div>
 <div class="card"><b>ÚLTIMOS EVENTOS</b><div id="history" class="history"><div class="small" style="padding:8px">Nenhum evento registrado.</div></div></div>
 <div class="footer">
-<button data-action="undo">↶ DESFAZER</button><button class="blue" data-action="report">📊 RELATÓRIO</button><button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button><button id="clearBtn" data-action="clearAll">🗑 LIMPAR</button>
+<button data-action="undo">↶ DESFAZER</button><button class="blue" data-action="report">📊 RELATÓRIO 1ºT</button><button class="green" data-action="finalScout">🏁 SCOUT FINAL</button><button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button><button id="clearBtn" data-action="clearAll">🗑 LIMPAR</button>
 </div>
 
 <div id="compatStatus" class="small" style="text-align:center;margin:8px 0;padding:8px;border:1px solid #334155;border-radius:8px">
 Carregando controles…
 </div>
 
-<div id="pwaDiagnostic" class="pwa-diagnostic">
-  <b>Diagnóstico PWA</b>
-  <div class="diag-row"><span>HTTPS</span><span id="diagHttps">...</span></div>
-  <div class="diag-row"><span>Manifesto</span><span id="diagManifest">...</span></div>
-  <div class="diag-row"><span>Service Worker</span><span id="diagSw">...</span></div>
-  <div class="diag-row"><span>Controlado pelo SW</span><span id="diagControlled">...</span></div>
-  <div class="diag-row"><span>Offline cache</span><span id="diagCache">...</span></div>
-  <div class="diag-row"><span>Prompt de instalação</span><span id="diagPrompt">Aguardando...</span></div>
+
+<div class="version-tag">Scout ao Vivo • Beta V5.7 • Períodos</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
-<button id="installScoutBtn" type="button">📲 INSTALAR SCOUT NO TABLET</button>
-<div class="version-tag">Scout ao Vivo • V5.6 • Diagnóstico PWA</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
+
+<div id="finalScoutOverlay" class="final-overlay">
+  <div class="final-sheet">
+    <h2>🏁 Scout Final da Partida</h2>
+    <div id="finalMatchTitle" class="final-sub"></div>
+    <table class="final-table">
+      <thead>
+        <tr><th>Indicador</th><th>1ºT</th><th>2ºT</th><th>Jogo</th></tr>
+      </thead>
+      <tbody id="finalScoutBody"></tbody>
+    </table>
+    <div class="final-actions">
+      <button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button>
+      <button data-action="closeFinalScout">FECHAR</button>
+    </div>
+  </div>
 </div>
 
 <div id="submenuOverlay" class="submenu-overlay" >
@@ -243,6 +267,7 @@ let seconds=0,timer=null,period=1,events=[];
 let possessionSide='none', possessionRhythm='Normal';
 let homePossSeconds=0, awayPossSeconds=0;
 let rhythmSeconds={Lento:0,Normal:0,Rápido:0};
+let firstHalfSnapshot=null;
 let possessionTicker=null;
 const PASS_SECONDS={Lento:3,Normal:2,Rápido:1.5};
 
@@ -250,7 +275,7 @@ const types=['Recuperação','Perda','Finalização','Transição ofensiva','Tra
 function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function renderClock(){document.getElementById('clock').textContent=fmt(seconds);document.getElementById('period').textContent=period+'º TEMPO'}
 function start(){
-  if(!timer)timer=setInterval(()=>{seconds++;renderClock()},1000);
+  if(!timer)timer=setInterval(()=>{seconds++;renderClock();if(seconds%5===0)save()},1000);
   ensurePossessionTicker();
 }
 function ensurePossessionTicker(){
@@ -268,7 +293,50 @@ function ensurePossessionTicker(){
 
 function pause(){clearInterval(timer);timer=null}
 function resetClock(){pause();seconds=0;renderClock()}
-function nextPeriod(){pause();possessionSide='none';period=2;seconds=0;renderClock();renderPossession()}
+
+function buildPossessionSnapshot(){
+  return {
+    homePossSeconds,
+    awayPossSeconds,
+    rhythmSeconds:{...rhythmSeconds},
+    estimatedPasses:estimatedPasses()
+  };
+}
+function possessionPctFromSnapshot(s){
+  if(!s) return {home:0,away:0};
+  const total=(s.homePossSeconds||0)+(s.awayPossSeconds||0);
+  return {
+    home: total?Math.round((s.homePossSeconds||0)/total*100):0,
+    away: total?Math.round((s.awayPossSeconds||0)/total*100):0
+  };
+}
+function saveFirstHalf(){
+  if(firstHalfSnapshot) return;
+  firstHalfSnapshot=buildPossessionSnapshot();
+  localStorage.setItem('scoutFirstHalf',JSON.stringify(firstHalfSnapshot));
+  const badge=document.getElementById('halfSavedBadge');
+  if(badge) badge.style.display='block';
+}
+function resetLiveForSecondHalf(){
+  homePossSeconds=0;
+  awayPossSeconds=0;
+  rhythmSeconds={Lento:0,Normal:0,Rápido:0};
+  possessionRhythm='Normal';
+  possessionSide='none';
+}
+function nextPeriod(){
+  if(period===2) return;
+  pause();
+  saveFirstHalf();
+  period=2;
+  seconds=0;
+  resetLiveForSecondHalf();
+  renderClock();
+  renderPossession();
+  render();
+  save();
+}
+
 function add(type,detail=''){
   const homeEl=document.getElementById('home');
   events.push({
@@ -408,6 +476,10 @@ function clearAll(){
   localStorage.removeItem('scoutEvents');
   localStorage.removeItem('scoutScore');
   localStorage.removeItem('scoutPossession');
+  localStorage.removeItem('scoutFirstHalf');
+  localStorage.removeItem('scoutMatchState');
+  firstHalfSnapshot=null;
+  const hb=document.getElementById('halfSavedBadge');if(hb)hb.style.display='none';
   renderClock();
   renderPossession();
   render();
@@ -416,23 +488,33 @@ function clearAll(){
   btn.style.background='';
 }
 function render(){
-let c={};types.forEach(t=>c[t]=0);events.forEach(e=>c[e.evento]=(c[e.evento]||0)+1);
+const currentEvents=events.filter(e=>e.periodo===period+'ºT');
+let c={};types.forEach(t=>c[t]=0);currentEvents.forEach(e=>c[e.evento]=(c[e.evento]||0)+1);
 const statsEl=document.getElementById('stats');
 const historyEl=document.getElementById('history');
 statsEl.innerHTML=types.map(t=>`<div class="stat"><b>${c[t]}</b>${t}</div>`).join('');
-historyEl.innerHTML=events.length
-? events.slice().reverse().map(e=>`<div class="row"><b>${e.tempo}</b> · ${e.periodo} · ${e.evento}${e.detalhe?` <b>(${e.detalhe})</b>`:''}<br><span class="small">${e.equipe}</span></div>`).join('')
-: '<div class="small" style="padding:8px">Nenhum evento registrado.</div>';
+historyEl.innerHTML=currentEvents.length
+? currentEvents.slice().reverse().map(e=>`<div class="row"><b>${e.tempo}</b> · ${e.periodo} · ${e.evento}${e.detalhe?` <b>(${e.detalhe})</b>`:''}<br><span class="small">${e.equipe}</span></div>`).join('')
+: '<div class="small" style="padding:8px">Nenhum evento registrado neste período.</div>';
 }
 function save(){
  localStorage.setItem('scoutEvents',JSON.stringify(events));
  localStorage.setItem('scoutScore',document.getElementById('hs').textContent);
  localStorage.setItem('scoutPossession',JSON.stringify({homePossSeconds,awayPossSeconds,rhythmSeconds,possessionRhythm,possessionSide}));
+ localStorage.setItem('scoutMatchState',JSON.stringify({period,seconds}));
+ if(firstHalfSnapshot) localStorage.setItem('scoutFirstHalf',JSON.stringify(firstHalfSnapshot));
 }
 function load(){
  try{
    events=JSON.parse(localStorage.getItem('scoutEvents'))||[];
    document.getElementById('hs').textContent=localStorage.getItem('scoutScore')||0;
+   const ms=JSON.parse(localStorage.getItem('scoutMatchState')||'null');
+   if(ms){period=ms.period||1;seconds=ms.seconds||0;}
+   firstHalfSnapshot=JSON.parse(localStorage.getItem('scoutFirstHalf')||'null');
+   if(firstHalfSnapshot){
+     const badge=document.getElementById('halfSavedBadge');
+     if(badge) badge.style.display='block';
+   }
    const ps=JSON.parse(localStorage.getItem('scoutPossession')||'null');
    if(ps){
      homePossSeconds=ps.homePossSeconds||0;awayPossSeconds=ps.awayPossSeconds||0;
@@ -445,6 +527,14 @@ function load(){
 }
 function downloadCSV(){let rows=[['Tempo','Periodo','Evento','Detalhe','Equipe'],...events.map(e=>[e.tempo,e.periodo,e.evento,e.detalhe||'',e.equipe])];
 const pp=possessionPct();
+const csvE1=eventCountsFor(events.filter(e=>e.periodo==='1ºT'));
+const csvE2=eventCountsFor(events.filter(e=>e.periodo==='2ºT'));
+const csvET=addCounts(csvE1,csvE2);
+const csvP1=possessionPctFromSnapshot(firstHalfSnapshot);
+const csvS2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+const csvP2=possessionPctFromSnapshot(csvS2);
+const csvST=combinedPossessionSnapshot();
+const csvPT=possessionPctFromSnapshot(csvST);
 rows.push([]);
 rows.push(['RESUMO POSSE','','','','']);
 rows.push(['Nossa posse',pp.home+'%','','','']);
@@ -455,6 +545,22 @@ rows.push(['Ritmo lento',fmt(rhythmSeconds.Lento),'','','']);
 rows.push(['Ritmo normal',fmt(rhythmSeconds.Normal),'','','']);
 rows.push(['Ritmo rápido',fmt(rhythmSeconds.Rápido),'','','']);
 rows.push(['Passes estimados','~'+estimatedPasses(),'','','']);
+rows.push([]);
+rows.push(['SCOUT FINAL','1ºT','2ºT','JOGO','']);
+rows.push(['Posse',csvP1.home+'% x '+csvP1.away+'%',csvP2.home+'% x '+csvP2.away+'%',csvPT.home+'% x '+csvPT.away+'%','']);
+rows.push(['Passes estimados','~'+(firstHalfSnapshot?.estimatedPasses||0),'~'+(csvS2.estimatedPasses||0),'~'+(csvST.estimatedPasses||0),'']);
+rows.push(['Finalizações',csvE1.fin,csvE2.fin,csvET.fin,'']);
+rows.push(['Recuperações',csvE1.rec,csvE2.rec,csvET.rec,'']);
+rows.push(['Perdas',csvE1.perda,csvE2.perda,csvET.perda,'']);
+rows.push(['Transições ofensivas',csvE1.to,csvE2.to,csvET.to,'']);
+rows.push(['Transições defensivas',csvE1.td,csvE2.td,csvET.td,'']);
+rows.push(['Escanteios a favor',csvE1.escFav,csvE2.escFav,csvET.escFav,'']);
+rows.push(['Escanteios contra',csvE1.escCon,csvE2.escCon,csvET.escCon,'']);
+rows.push(['Faltas a favor',csvE1.faltFav,csvE2.faltFav,csvET.faltFav,'']);
+rows.push(['Faltas contra',csvE1.faltCon,csvE2.faltCon,csvET.faltCon,'']);
+rows.push(['Saídas curtas',csvE1.sbCurta,csvE2.sbCurta,csvET.sbCurta,'']);
+rows.push(['Saídas longas',csvE1.sbLonga,csvE2.sbLonga,csvET.sbLonga,'']);
+
 let csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\n');
 let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='scout_'+(document.getElementById('home').value||'equipe').replace(/\s+/g,'_')+'.csv';a.click()}
 
@@ -468,6 +574,8 @@ function handleAction(el){
   else if(action==='undo') undo();
   else if(action==='downloadCSV') downloadCSV();
   else if(action==='report') openReport();
+  else if(action==='finalScout') openFinalScout();
+  else if(action==='closeFinalScout') closeFinalScout();
   else if(action==='shareReport') shareReport();
   else if(action==='imageReport') imageReport();
   else if(action==='shareGeneratedImage') shareGeneratedImage();
@@ -520,6 +628,81 @@ window.addEventListener('load',()=>{
   s.textContent='✅ Controles carregados — toque em INICIAR para testar.';
 });
 
+
+
+function eventCountsFor(arr){
+  const g=(type,detail)=>countEvent(arr,type,detail);
+  return {
+    fin:g('Finalização'), finAlvo:g('Finalização','No alvo'), finFora:g('Finalização','Fora'),
+    rec:g('Recuperação'), perda:g('Perda'),
+    to:g('Transição ofensiva'), td:g('Transição defensiva'),
+    escFav:g('Escanteio','A favor'), escCon:g('Escanteio','Contra'),
+    faltFav:g('Falta','A favor'), faltCon:g('Falta','Contra'),
+    sbCurta:g('Saída de bola','Curta'), sbLonga:g('Saída de bola','Longa'),
+    err:g('Erro defensivo'), gol:g('Gol')
+  };
+}
+function addCounts(a,b){
+  const o={}; Object.keys(a).forEach(k=>o[k]=(a[k]||0)+(b[k]||0)); return o;
+}
+function currentSecondHalfSnapshot(){
+  return buildPossessionSnapshot();
+}
+function combinedPossessionSnapshot(){
+  const a=firstHalfSnapshot||{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+  const b=currentSecondHalfSnapshot();
+  return {
+    homePossSeconds:(a.homePossSeconds||0)+(b.homePossSeconds||0),
+    awayPossSeconds:(a.awayPossSeconds||0)+(b.awayPossSeconds||0),
+    rhythmSeconds:{
+      Lento:(a.rhythmSeconds?.Lento||0)+(b.rhythmSeconds?.Lento||0),
+      Normal:(a.rhythmSeconds?.Normal||0)+(b.rhythmSeconds?.Normal||0),
+      Rápido:(a.rhythmSeconds?.Rápido||0)+(b.rhythmSeconds?.Rápido||0)
+    },
+    estimatedPasses:(a.estimatedPasses||0)+(b.estimatedPasses||0)
+  };
+}
+function openFinalScout(){
+  pause();
+  if(period===1) saveFirstHalf();
+
+  const e1=events.filter(e=>e.periodo==='1ºT');
+  const e2=events.filter(e=>e.periodo==='2ºT');
+  const c1=eventCountsFor(e1), c2=eventCountsFor(e2), ct=addCounts(c1,c2);
+
+  const p1=possessionPctFromSnapshot(firstHalfSnapshot);
+  const s2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+  const p2=possessionPctFromSnapshot(s2);
+  const st=combinedPossessionSnapshot();
+  const pt=possessionPctFromSnapshot(st);
+
+  const fmtPair=(a,b)=>`${a} / ${b}`;
+  const rows=[
+    ['Posse de bola',`${p1.home}% x ${p1.away}%`,`${p2.home}% x ${p2.away}%`,`${pt.home}% x ${pt.away}%`],
+    ['Passes estimados',`~${firstHalfSnapshot?.estimatedPasses||0}`,`~${s2.estimatedPasses||0}`,`~${st.estimatedPasses||0}`],
+    ['Finalizações',c1.fin,c2.fin,ct.fin],
+    ['No alvo',c1.finAlvo,c2.finAlvo,ct.finAlvo],
+    ['Fora',c1.finFora,c2.finFora,ct.finFora],
+    ['Recuperações',c1.rec,c2.rec,ct.rec],
+    ['Perdas',c1.perda,c2.perda,ct.perda],
+    ['Transições ofensivas',c1.to,c2.to,ct.to],
+    ['Transições defensivas',c1.td,c2.td,ct.td],
+    ['Escanteios (favor/contra)',fmtPair(c1.escFav,c1.escCon),fmtPair(c2.escFav,c2.escCon),fmtPair(ct.escFav,ct.escCon)],
+    ['Faltas (favor/contra)',fmtPair(c1.faltFav,c1.faltCon),fmtPair(c2.faltFav,c2.faltCon),fmtPair(ct.faltFav,ct.faltCon)],
+    ['Saída curta',c1.sbCurta,c2.sbCurta,ct.sbCurta],
+    ['Saída longa',c1.sbLonga,c2.sbLonga,ct.sbLonga],
+    ['Erros defensivos',c1.err,c2.err,ct.err],
+    ['Gols',c1.gol,c2.gol,ct.gol]
+  ];
+  document.getElementById('finalMatchTitle').textContent=
+    `${document.getElementById('home').value||'Equipe'} ${document.getElementById('hs').textContent} x ${document.getElementById('as').textContent} ${document.getElementById('away').value||'Adversário'}`;
+  document.getElementById('finalScoutBody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><b>${r[3]}</b></td></tr>`).join('');
+  document.getElementById('finalScoutOverlay').style.display='block';
+  save();
+}
+function closeFinalScout(){
+  document.getElementById('finalScoutOverlay').style.display='none';
+}
 
 function subsetForPeriod(p){
   return events.filter(e=>e.periodo===p+'ºT');
