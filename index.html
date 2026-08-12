@@ -115,6 +115,10 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 .final-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 @media(max-width:520px){.final-sheet{border-radius:0;padding:10px}.final-table{font-size:11px}.final-table th,.final-table td{padding:7px 4px}}
 
+
+.install-fixed{display:block;width:100%;margin:8px 0;min-height:46px;background:#2563eb;font-weight:800}
+.install-help{display:none;margin:8px 0;padding:10px;border:1px solid #475569;border-radius:10px;background:#0b1220;font-size:12px;line-height:1.45}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -190,7 +194,11 @@ Carregando controles…
 </div>
 
 
-<div class="version-tag">Scout ao Vivo • Beta V5.7 • Períodos</div><div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
+
+<button id="alwaysInstallBtn" class="install-fixed" type="button">📲 INSTALAR APP</button>
+<div id="installHelp" class="install-help"></div>
+<div class="version-tag">Scout ao Vivo • Beta V5.8 • Instalação visível</div>
+<div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
 
@@ -1113,6 +1121,75 @@ window.addEventListener('appinstalled',()=>{
 window.addEventListener('load',()=>{
   setTimeout(runPwaDiagnostic,1200);
   setTimeout(runPwaDiagnostic,4000);
+});
+
+
+let persistentInstallPrompt=null;
+
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  persistentInstallPrompt=e;
+});
+
+window.addEventListener('appinstalled',()=>{
+  persistentInstallPrompt=null;
+  const help=document.getElementById('installHelp');
+  if(help){
+    help.style.display='block';
+    help.innerHTML='✅ Scout instalado com sucesso. Procure o ícone na tela inicial do aparelho.';
+  }
+});
+
+async function tryInstallApp(){
+  const help=document.getElementById('installHelp');
+  if(!help) return;
+
+  if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches){
+    help.style.display='block';
+    help.innerHTML='✅ O Scout já está aberto em modo aplicativo neste aparelho.';
+    return;
+  }
+
+  if(persistentInstallPrompt){
+    try{
+      persistentInstallPrompt.prompt();
+      const choice=await persistentInstallPrompt.userChoice;
+      if(choice && choice.outcome==='accepted'){
+        help.style.display='block';
+        help.innerHTML='✅ Instalação aceita. Aguarde o Android concluir.';
+      }else{
+        help.style.display='block';
+        help.innerHTML='Instalação cancelada. Você pode tentar novamente quando quiser.';
+      }
+      persistentInstallPrompt=null;
+      return;
+    }catch(e){
+      console.error(e);
+    }
+  }
+
+  help.style.display='block';
+  const ua=navigator.userAgent||'';
+  const isAndroid=/Android/i.test(ua);
+  const isChrome=/Chrome/i.test(ua) && !/EdgA|OPR/i.test(ua);
+  const isEdge=/EdgA/i.test(ua);
+  const isSamsung=/SamsungBrowser/i.test(ua);
+
+  let msg='⚠️ Este navegador não liberou a instalação automática neste aparelho.<br><br>';
+  if(isAndroid){
+    if(isChrome) msg+='No Chrome: abra o menu ⋮ e procure <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.';
+    else if(isEdge) msg+='No Edge: abra o menu e procure <b>Adicionar ao telefone</b> ou <b>Instalar este site como aplicativo</b>.';
+    else if(isSamsung) msg+='No Samsung Internet: abra o menu e procure <b>Adicionar página a → Tela inicial</b>.';
+    else msg+='Abra o menu do navegador e procure por <b>Adicionar à tela inicial</b>, <b>Instalar app</b> ou <b>Criar atalho</b>.';
+    msg+='<br><br>✅ O Scout continua funcionando offline neste aparelho mesmo sem instalação, desde que a página já tenha sido carregada uma vez.';
+  }else{
+    msg+='Procure no menu do navegador a opção de instalar este site como aplicativo.';
+  }
+  help.innerHTML=msg;
+}
+
+document.addEventListener('click',(e)=>{
+  if(e.target && e.target.id==='alwaysInstallBtn') tryInstallApp();
 });
 
 </script>
