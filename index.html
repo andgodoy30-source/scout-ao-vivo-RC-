@@ -119,6 +119,14 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 .install-fixed{display:block;width:100%;margin:8px 0;min-height:46px;background:#2563eb;font-weight:800}
 .install-help{display:none;margin:8px 0;padding:10px;border:1px solid #475569;border-radius:10px;background:#0b1220;font-size:12px;line-height:1.45}
 
+
+.analyzed-wrap{margin-top:10px;padding-top:9px;border-top:1px solid #334155}
+.analyzed-title{text-align:center;font-size:11px;color:#94a3b8;margin-bottom:6px;font-weight:700}
+.analyzed-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.analyzed-choice button{min-height:40px;background:#1e293b;border:2px solid #334155}
+.analyzed-choice button.selected{background:#15803d;border-color:#22c55e;color:#fff}
+.analyzed-note{text-align:center;margin-top:6px;font-size:10px;color:#94a3b8}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -140,7 +148,16 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <div class="wrap">
 <div class="card">
 <h1>⚽ SCOUT AO VIVO</h1>
+<button id="alwaysInstallBtn" class="install-fixed" type="button">📲 INSTALAR APP</button>
 <div class="teams"><input id="home" value="Rio Claro"><div class="score"><span id="hs">0</span> × <span id="as">0</span></div><input id="away" value="Adversário"></div>
+<div class="analyzed-wrap">
+ <div class="analyzed-title">EQUIPE ANALISADA</div>
+ <div class="analyzed-choice">
+  <button id="analyzedHomeBtn" type="button" data-action="selectAnalyzed" data-side="home">Rio Claro</button>
+  <button id="analyzedAwayBtn" type="button" data-action="selectAnalyzed" data-side="away">Adversário</button>
+ </div>
+ <div id="analyzedNote" class="analyzed-note"></div>
+</div>
 <div class="clock" id="clock">00:00</div><div class="period" id="period">1º TEMPO</div>
 <div class="controls" style="margin-top:10px">
 <button class="green" data-action="start">▶ INICIAR</button><button data-action="pause">⏸ PAUSAR</button>
@@ -168,8 +185,8 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <button data-action="setRhythm" data-rhythm="Rápido">RÁPIDO</button>
 </div>
 <div class="possession-mini">
-<div>Nossa posse<br><b id="homePossPct">0%</b></div>
-<div>Adversário<br><b id="awayPossPct">0%</b></div>
+<div><span id="analyzedPossLabel">Equipe analisada</span><br><b id="homePossPct">0%</b></div>
+<div><span id="opponentPossLabel">Adversário</span><br><b id="awayPossPct">0%</b></div>
 </div>
 <div class="auto-posse-note">Automático: Finalização → adversário • Escanteio/Falta a favor → nossa posse • contra → adversário</div>
 </div>
@@ -180,7 +197,7 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 <button class="event amber" data-action="submenu" data-type="Falta" data-options="A favor|Contra">🟨 FALTA</button>
 <button class="event blue" data-action="submenu" data-type="Saída de bola" data-options="Curta|Longa">⚽ SAÍDA DE BOLA</button>
 <button class="event red" data-action="add" data-type="Erro defensivo">⚠ ERRO DEFENSIVO</button>
-<button class="event goal" style="grid-column:1/-1" data-action="goal">⚽ GOL</button>
+<button class="event goal" style="grid-column:1/-1" data-action="goalMenu">⚽ GOL</button>
 </div></div>
 
 <div class="card"><b>CONTADORES</b><div id="stats" class="stats" style="margin-top:8px"></div></div>
@@ -195,9 +212,9 @@ Carregando controles…
 
 
 
-<button id="alwaysInstallBtn" class="install-fixed" type="button">📲 INSTALAR APP</button>
+
 <div id="installHelp" class="install-help"></div>
-<div class="version-tag">Scout ao Vivo • Beta V5.8 • Instalação visível</div>
+<div class="version-tag">Scout ao Vivo • Beta V6.1 • Seleção corrigida</div>
 <div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
@@ -276,6 +293,7 @@ let possessionSide='none', possessionRhythm='Normal';
 let homePossSeconds=0, awayPossSeconds=0;
 let rhythmSeconds={Lento:0,Normal:0,Rápido:0};
 let firstHalfSnapshot=null;
+let analyzedSide=localStorage.getItem('scoutAnalyzedSide')||'home';
 let possessionTicker=null;
 const PASS_SECONDS={Lento:3,Normal:2,Rápido:1.5};
 
@@ -345,14 +363,38 @@ function nextPeriod(){
   save();
 }
 
-function add(type,detail=''){
-  const homeEl=document.getElementById('home');
+
+function teamName(side){
+ return (document.getElementById(side==='home'?'home':'away').value||(side==='home'?'Casa':'Visitante')).trim();
+}
+function analyzedTeamName(){return teamName(analyzedSide)}
+function opponentTeamName(){return teamName(analyzedSide==='home'?'away':'home')}
+function refreshAnalyzedUI(){
+ const hb=document.getElementById('analyzedHomeBtn'),ab=document.getElementById('analyzedAwayBtn');
+ if(!hb||!ab)return;
+ hb.textContent=teamName('home');ab.textContent=teamName('away');
+ hb.classList.toggle('selected',analyzedSide==='home');ab.classList.toggle('selected',analyzedSide==='away');
+ const n=document.getElementById('analyzedNote');
+ if(n)n.innerHTML=`🟢 <b>${analyzedTeamName()}</b> = equipe analisada • ${opponentTeamName()} = adversário`;
+ const hl=document.getElementById('analyzedPossLabel'), al=document.getElementById('opponentPossLabel');
+ if(hl)hl.textContent=analyzedTeamName();
+ if(al)al.textContent=opponentTeamName();
+}
+function selectAnalyzed(side){
+ analyzedSide=(side==='away')?'away':'home';
+ localStorage.setItem('scoutAnalyzedSide',analyzedSide);
+ refreshAnalyzedUI();
+ renderPossession();
+ save();
+}
+
+function add(type,detail='',teamOverride=''){
   events.push({
     tempo:fmt(seconds),
     periodo:period+'ºT',
     evento:type,
     detalhe:detail,
-    equipe:homeEl.value||'Equipe'
+    equipe:teamOverride || analyzedTeamName() || 'Equipe'
   });
   save();
   render();
@@ -408,13 +450,58 @@ function renderPossession(){
   const rl=document.getElementById('rhythmLabel');
   if(rl) rl.textContent=possessionRhythm.toUpperCase();
   if(live){
-    live.textContent=possessionSide==='home' ? '🟢 Nossa posse • '+possessionRhythm :
-      possessionSide==='away' ? '🔴 Posse adversária' : '⏸ Posse parada';
+    live.textContent=possessionSide==='home' ? '🟢 '+analyzedTeamName()+' • '+possessionRhythm :
+      possessionSide==='away' ? '🔴 '+opponentTeamName() : '⏸ Posse parada';
   }
   document.querySelectorAll('[data-action="setRhythm"]').forEach(b=>b.classList.toggle('active',b.dataset.rhythm===possessionRhythm));
 }
 
 let submenuType='';
+
+function openGoalMenu(){
+  submenuType='Gol';
+  const homeName=(document.getElementById('home').value||'Casa').trim();
+  const awayName=(document.getElementById('away').value||'Visitante').trim();
+  document.getElementById('submenuTitle').textContent='Gol de qual equipe?';
+  const box=document.getElementById('submenuOptions');
+  box.innerHTML='';
+
+  const h=document.createElement('button');
+  h.textContent=homeName;
+  h.className=analyzedSide==='home'?'green':'red';
+  h.dataset.action='goalTeam';
+  h.dataset.side='home';
+
+  const a=document.createElement('button');
+  a.textContent=awayName;
+  a.className=analyzedSide==='away'?'green':'red';
+  a.dataset.action='goalTeam';
+  a.dataset.side='away';
+
+  box.appendChild(h);
+  box.appendChild(a);
+  document.getElementById('submenuOverlay').style.display='flex';
+}
+
+function registerGoal(side){
+  const homeName=(document.getElementById('home').value||'Casa').trim();
+  const awayName=(document.getElementById('away').value||'Visitante').trim();
+  if(side==='home'){
+    const hsEl=document.getElementById('hs');
+    hsEl.textContent=Number(hsEl.textContent)+1;
+    add('Gol','Casa',homeName);
+    setPossession(analyzedSide==='home'?'away':'home');
+  }else{
+    const asEl=document.getElementById('as');
+    asEl.textContent=Number(asEl.textContent)+1;
+    add('Gol','Visitante',awayName);
+    setPossession(analyzedSide==='away'?'away':'home');
+  }
+  closeSubmenu();
+  save();
+  render();
+}
+
 function openSubmenu(type,options){
   submenuType=type;
   document.getElementById('submenuTitle').textContent=type;
@@ -458,7 +545,19 @@ function overlayClose(e){
 }
 
 function goal(){add('Gol');const hsEl=document.getElementById('hs');hsEl.textContent=Number(hsEl.textContent)+1;save();render()}
-function undo(){if(events.length){let e=events.pop();const hsEl=document.getElementById('hs');if(e.evento==='Gol')hsEl.textContent=Math.max(0,Number(hsEl.textContent)-1);save();render()}}
+function undo(){
+  if(events.length){
+    let e=events.pop();
+    if(e.evento==='Gol'){
+      const hsEl=document.getElementById('hs');
+      const asEl=document.getElementById('as');
+      if(e.detalhe==='Visitante') asEl.textContent=Math.max(0,Number(asEl.textContent)-1);
+      else hsEl.textContent=Math.max(0,Number(hsEl.textContent)-1);
+    }
+    save();
+    render();
+  }
+}
 let clearArmed=false, clearTimer=null;
 function clearAll(){
   const btn=document.getElementById('clearBtn');
@@ -483,9 +582,13 @@ function clearAll(){
   document.getElementById('as').textContent='0';
   localStorage.removeItem('scoutEvents');
   localStorage.removeItem('scoutScore');
+  localStorage.removeItem('scoutAwayScore');
   localStorage.removeItem('scoutPossession');
   localStorage.removeItem('scoutFirstHalf');
   localStorage.removeItem('scoutMatchState');
+  localStorage.removeItem('scoutAnalyzedSide');
+  analyzedSide='home';
+  refreshAnalyzedUI();
   firstHalfSnapshot=null;
   const hb=document.getElementById('halfSavedBadge');if(hb)hb.style.display='none';
   renderClock();
@@ -507,7 +610,11 @@ historyEl.innerHTML=currentEvents.length
 }
 function save(){
  localStorage.setItem('scoutEvents',JSON.stringify(events));
+ localStorage.setItem('scoutHomeName',document.getElementById('home').value);
+ localStorage.setItem('scoutAwayName',document.getElementById('away').value);
+ localStorage.setItem('scoutAnalyzedSide',analyzedSide);
  localStorage.setItem('scoutScore',document.getElementById('hs').textContent);
+ localStorage.setItem('scoutAwayScore',document.getElementById('as').textContent);
  localStorage.setItem('scoutPossession',JSON.stringify({homePossSeconds,awayPossSeconds,rhythmSeconds,possessionRhythm,possessionSide}));
  localStorage.setItem('scoutMatchState',JSON.stringify({period,seconds}));
  if(firstHalfSnapshot) localStorage.setItem('scoutFirstHalf',JSON.stringify(firstHalfSnapshot));
@@ -515,7 +622,11 @@ function save(){
 function load(){
  try{
    events=JSON.parse(localStorage.getItem('scoutEvents'))||[];
+   document.getElementById('home').value=localStorage.getItem('scoutHomeName')||document.getElementById('home').value;
+   document.getElementById('away').value=localStorage.getItem('scoutAwayName')||document.getElementById('away').value;
+   analyzedSide=localStorage.getItem('scoutAnalyzedSide')||'home';
    document.getElementById('hs').textContent=localStorage.getItem('scoutScore')||0;
+   document.getElementById('as').textContent=localStorage.getItem('scoutAwayScore')||0;
    const ms=JSON.parse(localStorage.getItem('scoutMatchState')||'null');
    if(ms){period=ms.period||1;seconds=ms.seconds||0;}
    firstHalfSnapshot=JSON.parse(localStorage.getItem('scoutFirstHalf')||'null');
@@ -530,7 +641,8 @@ function load(){
      possessionRhythm=ps.possessionRhythm||'Normal';
      possessionSide='none';
    }
- }catch(e){}
+    refreshAnalyzedUI();
+}catch(e){}
  render();renderPossession();ensurePossessionTicker();
 }
 function downloadCSV(){let rows=[['Tempo','Periodo','Evento','Detalhe','Equipe'],...events.map(e=>[e.tempo,e.periodo,e.evento,e.detalhe||'',e.equipe])];
@@ -575,7 +687,8 @@ let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{typ
 function handleAction(el){
   const action=el.dataset.action;
   if(!action) return;
-  if(action==='start') start();
+  if(action==='selectAnalyzed') selectAnalyzed(el.dataset.side);
+  else if(action==='start') start();
   else if(action==='pause') pause();
   else if(action==='nextPeriod') nextPeriod();
   else if(action==='resetClock') resetClock();
@@ -592,7 +705,8 @@ function handleAction(el){
   else if(action==='printReport') window.print();
   else if(action==='closeReport') closeReport();
   else if(action==='clearAll') clearAll();
-  else if(action==='goal') goal();
+  else if(action==='goalMenu') openGoalMenu();
+  else if(action==='goalTeam') registerGoal(el.dataset.side);
   else if(action==='add'){
     const t=el.dataset.type;
     add(t);
@@ -1188,6 +1302,10 @@ async function tryInstallApp(){
   help.innerHTML=msg;
 }
 
+['home','away'].forEach(id=>{
+ const el=document.getElementById(id);
+ if(el)el.addEventListener('input',()=>{refreshAnalyzedUI();save();});
+});
 document.addEventListener('click',(e)=>{
   if(e.target && e.target.id==='alwaysInstallBtn') tryInstallApp();
 });
