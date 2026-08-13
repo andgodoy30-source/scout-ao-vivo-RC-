@@ -2,157 +2,219 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b1728">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Scout Futebol">
+<meta name="apple-mobile-web-app-title" content="Scout ao Vivo">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>Scout Futebol — Beta 2</title>
+<title>Scout ao Vivo — Beta 3</title>
 <style>
-:root{--bg:#07111f;--panel:#0d1b2d;--panel2:#12243a;--text:#f5f7fb;--muted:#9fb0c5;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--amber:#f59e0b;--line:#263b55}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{max-width:980px;margin:auto;padding:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
-h1{font-size:21px;margin:0 0 4px}.small{font-size:12px;color:var(--muted)} input,select,button{font:inherit}
-input{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#091625;color:white}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.team{padding:13px;border:2px solid var(--line);border-radius:13px;background:var(--panel2);font-weight:800;color:white}.team.active{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
-.timer{text-align:center;font-size:42px;font-weight:900;letter-spacing:2px;margin:8px 0}.controls{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
-button{border:0;border-radius:11px;padding:12px 9px;background:#20344d;color:#fff;font-weight:750;cursor:pointer}button:active{transform:scale(.98)}
-.primary{background:var(--blue)}.good{background:#16753a}.danger{background:#8f2530}.warn{background:#8b5b09}.ghost{background:#17283e}
-.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.actions button{min-height:55px}
-.full{grid-column:1/-1}.label{font-size:12px;color:var(--muted);margin:3px 0 7px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.stat{background:#091625;border-radius:11px;padding:9px;text-align:center}.stat b{display:block;font-size:20px}
-.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1}.hidden{display:none}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted)}
-.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#20344d;font-size:11px}
-.notice{padding:9px;border-radius:10px;background:#17283e;color:#cbd6e5;font-size:12px;margin-top:8px}
-@media(min-width:700px){.actions{grid-template-columns:repeat(4,1fr)}.stats{grid-template-columns:repeat(6,1fr)}}
+:root{--bg:#0f172a;--card:#172033;--line:#334155;--txt:#f8fafc;--muted:#aeb9c9;--green:#16a34a;--red:#dc2626;--blue:#2563eb;--amber:#d97706;--purple:#7c3aed}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,sans-serif}
+.wrap{max-width:850px;margin:auto;padding:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+h1{font-size:21px;margin:0 0 10px}.teams{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:white;font-size:16px}
+.score{font-size:25px;font-weight:bold;white-space:nowrap}.clock{text-align:center;font-size:42px;font-weight:bold;margin:8px 0}
+.period{text-align:center;color:var(--muted);font-weight:bold}.controls,.events,.footer{display:grid;gap:8px}
+.controls{grid-template-columns:repeat(4,1fr)}.events{grid-template-columns:repeat(2,1fr)}.footer{grid-template-columns:repeat(3,1fr)}
+button{border:0;border-radius:12px;padding:14px 8px;font-weight:bold;font-size:15px;color:white;background:#334155;min-height:52px;cursor:pointer}
+button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{background:var(--green)}.red{background:var(--red)}
+.blue{background:var(--blue)}.amber{background:var(--amber)}.goal{background:var(--purple)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.stat{background:#0b1220;border-radius:9px;padding:8px;text-align:center;font-size:12px}
+.stat b{display:block;font-size:21px}.history{max-height:210px;overflow:auto}.row{padding:8px;border-bottom:1px solid var(--line);font-size:14px}
+.small{font-size:12px;color:var(--muted)}.label{font-size:12px;color:var(--muted);font-weight:bold;margin-bottom:7px}
+.toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}.toggle button{min-height:47px;background:#334155}
+.toggle button.active{background:var(--green);outline:2px solid #86efac}.toggle button.pos-away.active{background:var(--red);outline:2px solid #fca5a5}
+.moment-options{display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.moment-options.show{display:grid}
+.video{color:#fbbf24}.period-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}.period-table th,.period-table td{border-bottom:1px solid var(--line);padding:7px 4px;text-align:center}.period-table th:first-child,.period-table td:first-child{text-align:left}
+@media(max-width:520px){.controls{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.clock{font-size:38px}}
 </style>
 </head>
 <body><div class="wrap">
 <div class="card">
-<h1>Scout Futebol <span class="badge">Beta 2</span></h1>
-<div class="small">Registro rápido + momentos para revisão em vídeo</div>
+<h1>⚽ SCOUT AO VIVO <span class="small">BETA 3</span></h1>
+<div class="teams"><input id="home" value="Rio Claro"><div class="score"><span id="hs">0</span> × <span id="as">0</span></div><input id="away" value="Adversário"></div>
+
+<div class="label" style="margin-top:12px">EQUIPE ANALISADA</div>
+<div class="toggle">
+<button id="anHome" class="active" onclick="setAnalyzed('home')">Rio Claro</button>
+<button id="anAway" onclick="setAnalyzed('away')">Adversário</button>
 </div>
 
-<div class="card">
-<div class="grid2">
-<div><div class="label">Equipe da casa</div><input id="homeName" value="Rio Claro"></div>
-<div><div class="label">Visitante</div><input id="awayName" value="Adversário"></div>
-</div>
-<div class="label" style="margin-top:12px">Equipe analisada</div>
-<div class="grid2"><button id="anHome" class="team active" onclick="setAnalyzed('home')">Rio Claro</button><button id="anAway" class="team" onclick="setAnalyzed('away')">Adversário</button></div>
-<div class="label" style="margin-top:12px">Posse atual — toque para alternar</div>
-<div class="grid2"><button id="posHome" class="team active" onclick="setPossession('home')">Rio Claro</button><button id="posAway" class="team" onclick="setPossession('away')">Adversário</button></div>
+<div class="label" style="margin-top:12px">POSSE DE BOLA</div>
+<div class="toggle">
+<button id="posHome" class="active" onclick="setPossession('home')">Rio Claro</button>
+<button id="posAway" class="pos-away" onclick="setPossession('away')">Adversário</button>
 </div>
 
-<div class="card">
-<div class="timer" id="clock">00:00</div>
-<div class="controls">
-<button class="good" onclick="startTimer()">▶ Iniciar</button><button class="warn" onclick="pauseTimer()">Ⅱ Pausar</button>
-<button class="ghost" onclick="undo()">↶ Desfazer</button><button class="danger" onclick="resetAll()">Reiniciar</button>
+<div class="clock" id="clock">00:00</div><div class="period" id="period">1º TEMPO</div>
+<div class="controls" style="margin-top:10px">
+<button class="green" onclick="start()">▶ INICIAR</button><button onclick="pause()">⏸ PAUSAR</button>
+<button class="blue" onclick="nextPeriod()">2º TEMPO</button><button onclick="resetClock()">↺ ZERAR</button>
+</div></div>
+
+<div class="card"><div class="events">
+<button class="event green" onclick="addAnalyzed('Recuperação')">🟢 RECUPERAÇÃO</button>
+<button class="event red" onclick="addAnalyzed('Perda')">🔴 PERDA</button>
+<button id="shotBtn" class="event blue" onclick="addImportantPossession('Finalização')">⚽ FINALIZAÇÃO</button>
+<button class="event blue" onclick="addAnalyzed('Passe-chave')">🎯 PASSE-CHAVE</button>
+<button class="event green" onclick="addAnalyzed('Transição ofensiva')">⬆ TRANS. OFENSIVA</button>
+<button class="event red" onclick="addAnalyzed('Transição defensiva')">⬇ TRANS. DEFENSIVA</button>
+<button class="event amber" onclick="addPossession('Bola parada')">🚩 BOLA PARADA</button>
+<button class="event amber" onclick="toggleMoment()">★ MOMENTO</button>
+<div id="momentOptions" class="moment-options" style="grid-column:1/-1">
+<button class="green" onclick="addMoment('Momento ofensivo')">⬆ OFENSIVO</button>
+<button class="red" onclick="addMoment('Momento defensivo')">⬇ DEFENSIVO</button>
 </div>
-</div>
+<button id="goalBtn" class="event goal" style="grid-column:1/-1" onclick="goal()">⚽ GOL</button>
+</div></div>
+
+<div class="card"><b>CONTADORES</b><div id="stats" class="stats" style="margin-top:8px"></div></div>
 
 <div class="card">
-<div class="label">Ações quantitativas</div>
-<div class="actions">
-<button onclick="logAnalyzed('Recuperação')">Recuperação</button>
-<button onclick="logAnalyzed('Perda')">Perda</button>
-<button onclick="logAnalyzed('Transição ofensiva')">Transição Of.</button>
-<button onclick="logAnalyzed('Transição defensiva')">Transição Def.</button>
-<button onclick="logPossession('Escanteio')">Escanteio</button>
-<button onclick="logPossession('Falta')">Falta</button>
-<button onclick="logAnalyzed('Saída curta')">Saída curta</button>
-<button onclick="logAnalyzed('Saída longa')">Saída longa</button>
-</div>
+<b>EVOLUÇÃO POR BLOCOS DE 15'</b>
+<div class="small" style="margin-top:5px">Atualização automática conforme os registros.</div>
+<div id="periodBlocks"></div>
 </div>
 
-<div class="card">
-<div class="label">Lances importantes — guardam também início de vídeo 15s antes</div>
-<div class="actions">
-<button class="primary" id="shotBtn" onclick="importantPossession('Finalização')">Finalização — Rio Claro</button>
-<button class="danger" id="goalBtn" onclick="importantPossession('Gol')">Gol — Rio Claro</button>
-<button class="good" onclick="importantAnalyzed('Momento ofensivo')">Momento Ofensivo</button>
-<button class="warn" onclick="importantAnalyzed('Momento defensivo')">Momento Defensivo</button>
+<div class="card"><b>ÚLTIMOS EVENTOS</b><div id="history" class="history"><div class="small" style="padding:8px">Nenhum evento registrado.</div></div></div>
+<div class="footer">
+<button onclick="undo()">↶ DESFAZER</button><button class="blue" onclick="downloadCSV()">💾 EXPORTAR CSV</button><button onclick="clearAll()">🗑 LIMPAR</button>
 </div>
-<div class="notice">Ex.: evento aos 32:47 → o scout mantém 32:47 nas estatísticas e salva 32:32 como início sugerido para revisão do vídeo.</div>
-</div>
-
-<div class="card">
-<div class="tabs"><button onclick="showTab('summary')">Resumo</button><button onclick="showTab('periods')">Blocos 15'</button><button onclick="showTab('moments')">Momentos</button></div>
-<div id="summary"><div class="stats" id="stats"></div></div>
-<div id="periods" class="hidden"></div>
-<div id="moments" class="hidden"></div>
-</div>
-
-<div class="card">
-<div class="grid3">
-<button class="primary" onclick="exportCSV()">Exportar CSV</button>
-<button onclick="saveLocal()">Salvar</button>
-<button onclick="loadLocal()">Carregar</button>
-</div>
-<div class="small" style="margin-top:8px">O salvamento usa o armazenamento local deste navegador.</div>
-</div>
+<div class="small" style="text-align:center;margin:10px">Finalização, Gol e Momento salvam também o início sugerido do vídeo 15s antes.</div>
 </div>
 <script>
-let events=[], analyzed='home', possession='home', running=false, baseMs=0, startedAt=null, ticker=null;
-const homeName=document.getElementById('homeName'),awayName=document.getElementById('awayName');
-function names(){return {home:homeName.value.trim()||'Casa',away:awayName.value.trim()||'Visitante'}}
-function syncNames(){let n=names();anHome.textContent=n.home;anAway.textContent=n.away;posHome.textContent=n.home;posAway.textContent=n.away;updateImportant();render()}
-homeName.oninput=awayName.oninput=syncNames;
-function setAnalyzed(x){analyzed=x;anHome.classList.toggle('active',x==='home');anAway.classList.toggle('active',x==='away')}
-function setPossession(x){possession=x;posHome.classList.toggle('active',x==='home');posAway.classList.toggle('active',x==='away');updateImportant()}
-function updateImportant(){let n=names(),t=n[possession];shotBtn.textContent='Finalização — '+t;goalBtn.textContent='Gol — '+t}
-function elapsed(){return baseMs+(running?(Date.now()-startedAt):0)}
-function fmt(ms){let s=Math.max(0,Math.floor(ms/1000)),m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
-function tick(){clock.textContent=fmt(elapsed())}
-function startTimer(){if(running)return;running=true;startedAt=Date.now();ticker=setInterval(tick,250)}
-function pauseTimer(){if(!running)return;baseMs=elapsed();running=false;startedAt=null;clearInterval(ticker);tick()}
-function add(type,team,important=false){let ms=elapsed();events.push({id:Date.now()+Math.random(),event:type,team:names()[team],teamKey:team,time_ms:ms,time:fmt(ms),video_start:important?fmt(Math.max(0,ms-15000)):'',important});render()}
-function logAnalyzed(t){add(t,analyzed,false)}
-function logPossession(t){add(t,possession,false)}
-function importantPossession(t){add(t,possession,true)}
-function importantAnalyzed(t){add(t,analyzed,true)}
-function undo(){events.pop();render()}
-function resetAll(){if(!confirm('Apagar o scout atual?'))return;pauseTimer();events=[];baseMs=0;tick();render()}
-function showTab(id){['summary','periods','moments'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id))}
-function count(t){return events.filter(e=>e.event===t).length}
+let seconds=0,timer=null,period=1,events=[],analyzed='home',possession='home';
+const types=['Recuperação','Perda','Finalização','Passe-chave','Transição ofensiva','Transição defensiva','Bola parada','Momento ofensivo','Momento defensivo','Gol'];
+
+function teamName(key){return ((key==='home'?home.value:away.value)|| (key==='home'?'Casa':'Visitante')).trim()}
+function fmt(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function renderClock(){clock.textContent=fmt(seconds);document.getElementById('period').textContent=period+'º TEMPO'}
+function start(){if(!timer)timer=setInterval(()=>{seconds++;renderClock()},1000)}
+function pause(){clearInterval(timer);timer=null}
+function resetClock(){pause();seconds=0;renderClock()}
+function nextPeriod(){pause();period=2;seconds=0;renderClock()}
+
+function syncTeamLabels(){
+ anHome.textContent=teamName('home'); anAway.textContent=teamName('away');
+ posHome.textContent=teamName('home'); posAway.textContent=teamName('away');
+ updatePossessionButtons();
+}
+home.addEventListener('input',syncTeamLabels);away.addEventListener('input',syncTeamLabels);
+
+function setAnalyzed(key){
+ analyzed=key;
+ anHome.classList.toggle('active',key==='home');
+ anAway.classList.toggle('active',key==='away');
+ saveState();
+}
+function setPossession(key){
+ possession=key;
+ posHome.classList.toggle('active',key==='home');
+ posAway.classList.toggle('active',key==='away');
+ updatePossessionButtons();
+ saveState();
+}
+function updatePossessionButtons(){
+ shotBtn.innerHTML='⚽ FINALIZAÇÃO<br><span class="small" style="color:white">'+teamName(possession)+'</span>';
+ goalBtn.innerHTML='⚽ GOL — '+teamName(possession);
+}
+function toggleMoment(){momentOptions.classList.toggle('show')}
+function pushEvent(type,key,important=false){
+ const videoStart=important?fmt(seconds-15):'';
+ events.push({
+   tempo:fmt(seconds),
+   segundos:seconds,
+   periodo:period+'ºT',
+   periodo_num:period,
+   evento:type,
+   equipe:teamName(key),
+   equipe_chave:key,
+   inicio_video:videoStart
+ });
+ save();render();
+}
+function addAnalyzed(type){pushEvent(type,analyzed,false)}
+function addPossession(type){pushEvent(type,possession,false)}
+function addImportantPossession(type){pushEvent(type,possession,true)}
+function addMoment(type){pushEvent(type,analyzed,true);momentOptions.classList.remove('show')}
+
+function goal(){
+ pushEvent('Gol',possession,true);
+ if(possession==='home') hs.textContent=Number(hs.textContent)+1;
+ else as.textContent=Number(as.textContent)+1;
+ saveState();
+}
+function undo(){
+ if(events.length){
+   let e=events.pop();
+   if(e.evento==='Gol'){
+     if(e.equipe_chave==='home')hs.textContent=Math.max(0,Number(hs.textContent)-1);
+     else as.textContent=Math.max(0,Number(as.textContent)-1);
+   }
+   save();render()
+ }
+}
+function clearAll(){
+ if(confirm('Apagar todos os eventos deste scout?')){
+   events=[];hs.textContent=0;as.textContent=0;save();render()
+ }
+}
 function render(){
- let keys=['Recuperação','Perda','Transição ofensiva','Transição defensiva','Finalização','Gol'];
- stats.innerHTML=keys.map(k=>`<div class="stat"><span class="small">${k}</span><b>${count(k)}</b></div>`).join('');
- renderPeriods();renderMoments()
+ let c={};types.forEach(t=>c[t]=0);events.forEach(e=>c[e.evento]=(c[e.evento]||0)+1);
+ let visible=['Recuperação','Perda','Finalização','Passe-chave','Transição ofensiva','Transição defensiva','Bola parada','Gol'];
+ stats.innerHTML=visible.map(t=>`<div class="stat"><b>${c[t]||0}</b>${t}</div>`).join('');
+ history.innerHTML=events.length?events.slice().reverse().map(e=>`<div class="row"><b>${e.tempo}</b> · ${e.periodo} · ${e.evento}<br><span class="small">${e.equipe}${e.inicio_video?` · <span class="video">vídeo desde ${e.inicio_video}</span>`:''}</span></div>`).join(''):'<div class="small" style="padding:8px">Nenhum evento registrado.</div>';
+ renderBlocks();
 }
-function renderPeriods(){
- let max=Math.max(elapsed(),...events.map(e=>e.time_ms),1),blocks=Math.max(1,Math.ceil(max/900000));
- let types=['Recuperação','Perda','Transição ofensiva','Transição defensiva','Finalização','Gol'];
- let h='<table><thead><tr><th>Bloco</th>'+types.map(x=>'<th>'+x.replace('Transição ','Trans. ')+'</th>').join('')+'</tr></thead><tbody>';
- for(let b=0;b<blocks;b++){let a=b*900000,z=(b+1)*900000;h+=`<tr><td>${b*15}–${(b+1)*15}'</td>`+types.map(t=>`<td>${events.filter(e=>e.event===t&&e.time_ms>=a&&e.time_ms<z).length}</td>`).join('')+'</tr>'}
- periods.innerHTML=h+'</tbody></table>'
+function renderBlocks(){
+ const metrics=['Recuperação','Perda','Finalização','Transição ofensiva','Transição defensiva','Gol'];
+ const maxP=Math.max(period,...events.map(e=>e.periodo_num||1));
+ let rows=[];
+ for(let p=1;p<=maxP;p++){
+   const pe=events.filter(e=>(e.periodo_num||1)===p);
+   const maxSec=Math.max(p===period?seconds:0,...pe.map(e=>e.segundos||0),0);
+   const blocks=Math.max(1,Math.ceil((maxSec+1)/900));
+   for(let b=0;b<blocks;b++){
+     const ini=b*900,fim=(b+1)*900;
+     const be=pe.filter(e=>(e.segundos||0)>=ini&&(e.segundos||0)<fim);
+     rows.push(`<tr><td>${p}ºT ${b*15}–${(b+1)*15}'</td>`+
+       metrics.map(m=>`<td>${be.filter(e=>e.evento===m).length}</td>`).join('')+'</tr>');
+   }
+ }
+ periodBlocks.innerHTML='<table class="period-table"><thead><tr><th>Bloco</th><th>Rec.</th><th>Perda</th><th>Fin.</th><th>T.Of.</th><th>T.Def.</th><th>Gol</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
 }
-function renderMoments(){
- let arr=events.filter(e=>e.important);
- if(!arr.length){moments.innerHTML='<div class="small">Nenhum lance marcado para revisão.</div>';return}
- moments.innerHTML='<table><thead><tr><th>Evento</th><th>Equipe</th><th>Tempo</th><th>Vídeo desde</th></tr></thead><tbody>'+arr.map(e=>`<tr><td>${e.event}</td><td>${e.team}</td><td>${e.time}</td><td><b>${e.video_start}</b></td></tr>`).join('')+'</tbody></table>'
+function save(){
+ localStorage.setItem('scoutEventsBeta3',JSON.stringify(events));
+ saveState();
 }
-function saveLocal(){localStorage.setItem('scout_beta2',JSON.stringify({events,baseMs:elapsed(),home:homeName.value,away:awayName.value,analyzed, possession}));alert('Scout salvo neste navegador.')}
-function loadLocal(){let x=localStorage.getItem('scout_beta2');if(!x)return alert('Nenhum scout salvo.');pauseTimer();let d=JSON.parse(x);events=d.events||[];baseMs=d.baseMs||0;homeName.value=d.home||'Rio Claro';awayName.value=d.away||'Adversário';setAnalyzed(d.analyzed||'home');setPossession(d.possession||'home');syncNames();tick();render()}
-function csvEscape(x){return '"'+String(x??'').replaceAll('"','""')+'"'}
-function exportCSV(){
- let rows=[['tempo','evento','equipe','inicio_video_15s','importante'],...events.map(e=>[e.time,e.event,e.team,e.video_start,e.important?'sim':'não'])];
- let csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\n');
- let blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='scout_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(a.href)
+function saveState(){
+ localStorage.setItem('scoutStateBeta3',JSON.stringify({
+   hs:hs.textContent,as:as.textContent,home:home.value,away:away.value,
+   analyzed,possession,seconds,period
+ }));
 }
-syncNames();tick();render();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
-      .catch(err => console.log('Service Worker:', err));
-  });
+function load(){
+ try{
+   events=JSON.parse(localStorage.getItem('scoutEventsBeta3'))||[];
+   let s=JSON.parse(localStorage.getItem('scoutStateBeta3'))||{};
+   hs.textContent=s.hs||0; as.textContent=s.as||0;
+   if(s.home)home.value=s.home;if(s.away)away.value=s.away;
+   seconds=Number(s.seconds)||0;period=Number(s.period)||1;
+   setAnalyzed(s.analyzed||'home');setPossession(s.possession||'home');
+ }catch(e){}
+ syncTeamLabels();render();renderClock();
 }
-</script>
-
-</body></html>
+function downloadCSV(){
+ let rows=[['Tempo','Periodo','Evento','Equipe','Inicio_video_15s'],
+ ...events.map(e=>[e.tempo,e.periodo,e.evento,e.equipe,e.inicio_video||''])];
+ let csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\n');
+ let a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ a.download='scout_'+teamName(analyzed).replace(/\s+/g,'_')+'.csv';
+ a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}))}
+load();
+</script></body></html>
