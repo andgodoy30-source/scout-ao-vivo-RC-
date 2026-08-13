@@ -129,7 +129,7 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest">
+<link rel="manifest" href="./manifest.webmanifest?v=68">
 <meta name="theme-color" content="#0f172a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Scout ao Vivo">
@@ -140,7 +140,7 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 
 
 <style>
-/* V6.7: destaque inequívoco do botão GOL */
+/* V6.8: destaque inequívoco do botão GOL */
 button[data-action="goalMenu"]{
   background:#eab308 !important;
   color:#111827 !important;
@@ -229,7 +229,7 @@ Carregando controles…
 
 
 <div id="installHelp" class="install-help"></div>
-<div class="version-tag">Scout ao Vivo • Beta V6.7 • Gol amarelo</div>
+<div class="version-tag">Scout ao Vivo • Beta V6.8 • Gol amarelo</div>
 <div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
@@ -1207,9 +1207,7 @@ document.addEventListener('click', async (e)=>{
   btn.style.display='none';
 });
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=67', {scope:'./'})
+)
       .then(reg=>reg.update())
       .catch(err=>console.error('Falha ao registrar Service Worker:',err));
   });
@@ -1387,11 +1385,56 @@ window.addEventListener('load',()=>{
   window.addEventListener('online',updateNet);
   window.addEventListener('offline',updateNet);
 });
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=67',{scope:'./'}).then(()=>console.log('SW ok')).catch(console.error);
+).then(()=>console.log('SW ok')).catch(console.error);
   });
 }
+</script>
+
+
+<script>
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+
+  let refreshing = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+
+  window.addEventListener('load', async function () {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js?v=68', {scope:'./'});
+      await reg.update();
+
+      if (reg.waiting) {
+        reg.waiting.postMessage({type:'SKIP_WAITING'});
+      }
+
+      reg.addEventListener('updatefound', function () {
+        const worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', function () {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            worker.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+
+      // Remove caches from older Scout versions.
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(
+          keys.filter(k => k.startsWith('scout-') && k !== 'scout-v6-8-20260813')
+              .map(k => caches.delete(k))
+        );
+      }
+    } catch (e) {
+      console.log('Atualização PWA:', e);
+    }
+  });
+})();
 </script>
 
 </body></html>

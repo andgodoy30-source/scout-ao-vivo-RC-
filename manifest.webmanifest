@@ -1,8 +1,8 @@
 {
-  "name": "Scout ao Vivo — V6.7",
+  "name": "Scout ao Vivo — V6.8",
   "short_name": "Scout ao Vivo",
   "description": "Scout de futebol para análise ao vivo.",
-  "start_url": "./index.html?v=67",
+  "start_url": "./index.html?v=68",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f172a",
