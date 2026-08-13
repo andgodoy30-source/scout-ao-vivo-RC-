@@ -3,218 +3,1395 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0f172a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Scout ao Vivo">
-<link rel="manifest" href="./manifest.webmanifest">
-<title>Scout ao Vivo — Beta 3</title>
+<title>Scout ao Vivo</title>
 <style>
-:root{--bg:#0f172a;--card:#172033;--line:#334155;--txt:#f8fafc;--muted:#aeb9c9;--green:#16a34a;--red:#dc2626;--blue:#2563eb;--amber:#d97706;--purple:#7c3aed}
+:root{--bg:#0f172a;--card:#172033;--line:#334155;--txt:#f8fafc;--muted:#aeb9c9;--green:#16a34a;--red:#dc2626;--blue:#2563eb;--amber:#d97706}
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,sans-serif}
 .wrap{max-width:850px;margin:auto;padding:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
 h1{font-size:21px;margin:0 0 10px}.teams{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:white;font-size:16px}
 .score{font-size:25px;font-weight:bold;white-space:nowrap}.clock{text-align:center;font-size:42px;font-weight:bold;margin:8px 0}
 .period{text-align:center;color:var(--muted);font-weight:bold}.controls,.events,.footer{display:grid;gap:8px}
-.controls{grid-template-columns:repeat(4,1fr)}.events{grid-template-columns:repeat(2,1fr)}.footer{grid-template-columns:repeat(3,1fr)}
-button{border:0;border-radius:12px;padding:14px 8px;font-weight:bold;font-size:15px;color:white;background:#334155;min-height:52px;cursor:pointer}
+.controls{grid-template-columns:repeat(4,1fr)}.events{grid-template-columns:repeat(2,1fr)}.footer{grid-template-columns:repeat(2,1fr)}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;border:0;border-radius:12px;padding:14px 8px;font-weight:bold;font-size:15px;color:white;background:#334155;min-height:52px}
 button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{background:var(--green)}.red{background:var(--red)}
-.blue{background:var(--blue)}.amber{background:var(--amber)}.goal{background:var(--purple)}
+.blue{background:var(--blue)}.cyan{background:#0891b2}.purple{background:#7c3aed}.rose{background:#be185d}.lime{background:#4d7c0f}.orange{background:#c2410c}.teal{background:#0f766e}.indigo{background:#4338ca}.gold{background:#ca8a04;color:#111827}.amber{background:var(--amber)}.goal{background:#7c3aed}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.stat{background:#0b1220;border-radius:9px;padding:8px;text-align:center;font-size:12px}
-.stat b{display:block;font-size:21px}.history{max-height:210px;overflow:auto}.row{padding:8px;border-bottom:1px solid var(--line);font-size:14px}
-.small{font-size:12px;color:var(--muted)}.label{font-size:12px;color:var(--muted);font-weight:bold;margin-bottom:7px}
-.toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}.toggle button{min-height:47px;background:#334155}
-.toggle button.active{background:var(--green);outline:2px solid #86efac}.toggle button.pos-away.active{background:var(--red);outline:2px solid #fca5a5}
-.moment-options{display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.moment-options.show{display:grid}
-.video{color:#fbbf24}.period-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}.period-table th,.period-table td{border-bottom:1px solid var(--line);padding:7px 4px;text-align:center}.period-table th:first-child,.period-table td:first-child{text-align:left}
-@media(max-width:520px){.controls{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.clock{font-size:38px}}
+.stat b{display:block;font-size:21px}.history{max-height:180px;overflow:auto}.row{padding:8px;border-bottom:1px solid var(--line);font-size:14px}
+.small{font-size:12px;color:var(--muted)}@media(max-width:520px){.controls{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.clock{font-size:38px}}
+
+.submenu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:18px;z-index:9999}
+.submenu-box{width:min(440px,100%);background:#172033;border:1px solid #475569;border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.submenu-title{text-align:center;font-size:21px;font-weight:bold;margin-bottom:12px}
+.submenu-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.submenu-options button{min-height:72px;font-size:18px}
+.submenu-cancel{width:100%;margin-top:10px;background:#475569}
+
+
+.report-overlay{position:fixed;inset:0;background:#0f172a;display:none;z-index:10000;overflow:auto;padding:12px}
+.report-sheet{max-width:760px;margin:auto;background:white;color:#111827;border-radius:16px;padding:18px}
+.report-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:2px solid #e5e7eb;padding-bottom:12px;margin-bottom:14px}
+.report-title{font-size:22px;font-weight:800}.report-score{font-size:28px;font-weight:800}
+.report-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.report-card{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.report-card h3{margin:0 0 8px;font-size:15px}.report-big{font-size:28px;font-weight:800}
+.bar{height:12px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:6px 0 2px}.bar span{display:block;height:100%;background:#334155}
+.report-table{width:100%;border-collapse:collapse;margin-top:12px}.report-table th,.report-table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:13px}
+.insights{margin-top:12px;padding:12px;background:#f8fafc;border-radius:12px}.insights p{margin:6px 0;font-size:14px}
+.report-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+.report-actions button{min-height:44px}
+@media(max-width:520px){.report-grid{grid-template-columns:1fr}.report-actions{grid-template-columns:1fr}.report-sheet{border-radius:0;padding:14px}}
+@media print{body>*:not(.report-overlay){display:none!important}.report-overlay{display:block!important;position:static;padding:0;background:white}.report-sheet{max-width:none;border-radius:0}.report-actions{display:none!important}}
+
+
+/* V4 - tema futebol universal */
+.report-overlay{background:#07130d}
+.report-sheet{
+  background:
+    linear-gradient(rgba(255,255,255,.96),rgba(255,255,255,.96)),
+    repeating-linear-gradient(90deg,#eaf5ed 0,#eaf5ed 70px,#f6fbf7 70px,#f6fbf7 140px);
+  border:2px solid #173f2a;
+  position:relative;overflow:hidden
+}
+.report-sheet:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.08;
+  background:
+    linear-gradient(90deg,transparent 49.7%,#173f2a 49.7%,#173f2a 50.3%,transparent 50.3%);
+}
+.report-head{position:relative;border-bottom:3px solid #173f2a}
+.report-title{color:#123524;letter-spacing:.4px}
+.report-card{position:relative;background:rgba(255,255,255,.9);border:1px solid #cbd5d1}
+.report-card h3{color:#234936;text-transform:uppercase;letter-spacing:.35px}
+.report-big{color:#102e20}
+.bar{background:#dce7df}.bar span{background:#2e6848}
+.insights{position:relative;background:#edf6f0;border-left:4px solid #2e6848}
+.report-table{position:relative;background:rgba(255,255,255,.88)}
+.report-table th{background:#173f2a;color:white}
+.report-badge{display:inline-block;background:#173f2a;color:#fff;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;letter-spacing:.4px;margin-bottom:5px}
+.report-note{font-size:11px;color:#64748b;margin-top:10px;text-align:center}
+
+
+.image-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:12000;overflow:auto;padding:12px}
+.image-preview-box{max-width:780px;margin:auto;text-align:center}
+.image-preview-box img{width:100%;height:auto;background:white;border-radius:12px;display:block}
+.image-preview-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px auto 18px}
+.image-preview-actions button{min-height:48px}
+.version-tag{font-size:10px;color:#94a3b8;text-align:center;margin:4px 0 8px}
+@media(max-width:520px){.image-preview-actions{grid-template-columns:1fr}}
+
+
+.possession-panel{grid-column:auto;border:1px solid #334155;border-radius:12px;padding:9px;background:#0b1220}
+.possession-head{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-bottom:7px}
+.possession-live{font-size:12px;font-weight:700}
+.rhythm{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.rhythm.open{display:grid}
+.rhythm button{min-height:40px;padding:7px;font-size:12px;background:#334155}
+.rhythm button.active{outline:3px solid #fff;background:#2563eb}
+.rhythm-toggle{width:100%;min-height:38px;padding:7px 10px;margin-top:8px;background:#1e293b;font-size:12px}
+.rhythm-toggle .arrow{float:right}
+.possession-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.possession-mini div{background:#111827;border-radius:8px;padding:7px;text-align:center;font-size:12px}
+
+
+.auto-posse-note{font-size:10px;color:#94a3b8;text-align:center;margin-top:6px;line-height:1.35}
+
+
+#installScoutBtn{display:none;width:100%;margin:8px 0 0;min-height:44px;background:#2563eb;font-weight:800}
+
+
+.pwa-diagnostic{margin:10px 0;padding:10px;border:1px solid #334155;border-radius:10px;background:#0b1220;font-size:12px}
+.pwa-diagnostic b{display:block;margin-bottom:6px}
+.diag-row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid #1e293b}
+.diag-row:last-child{border-bottom:0}
+.diag-ok{color:#22c55e}.diag-bad{color:#ef4444}.diag-warn{color:#f59e0b}
+
+
+.final-overlay{position:fixed;inset:0;background:#07130d;display:none;z-index:13000;overflow:auto;padding:12px}
+.final-sheet{max-width:820px;margin:auto;background:#fff;color:#111827;border-radius:16px;padding:16px}
+.final-sheet h2{margin:0 0 4px;color:#173f2a}.final-sub{color:#64748b;margin-bottom:12px}
+.final-table{width:100%;border-collapse:collapse;font-size:13px}
+.final-table th{background:#173f2a;color:#fff;padding:9px;text-align:center}
+.final-table td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:center}
+.final-table td:first-child{text-align:left;font-weight:700}
+.final-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+@media(max-width:520px){.final-sheet{border-radius:0;padding:10px}.final-table{font-size:11px}.final-table th,.final-table td{padding:7px 4px}}
+
+
+.install-fixed{display:block;width:100%;margin:8px 0;min-height:46px;background:#2563eb;font-weight:800}
+.install-help{display:none;margin:8px 0;padding:10px;border:1px solid #475569;border-radius:10px;background:#0b1220;font-size:12px;line-height:1.45}
+
+
+.analyzed-wrap{margin-top:10px;padding-top:9px;border-top:1px solid #334155}
+.analyzed-title{text-align:center;font-size:11px;color:#94a3b8;margin-bottom:6px;font-weight:700}
+.analyzed-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.analyzed-choice button{min-height:40px;background:#1e293b;border:2px solid #334155}
+.analyzed-choice button.selected{background:#15803d;border-color:#22c55e;color:#fff}
+.analyzed-note{text-align:center;margin-top:6px;font-size:10px;color:#94a3b8}
+
 </style>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Scout ao Vivo">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+
+
+<style>
+/* V6.7: destaque inequívoco do botão GOL */
+button[data-action="goalMenu"]{
+  background:#eab308 !important;
+  color:#111827 !important;
+  border:2px solid #fde047 !important;
+  box-shadow:0 0 0 1px rgba(234,179,8,.25) !important;
+}
+button[data-action="submenu"][data-type="Momento"]{
+  background:#7c3aed !important;
+  color:#ffffff !important;
+}
+</style>
+
 </head>
-<body><div class="wrap">
+<body>
+
+<div id="installBar" style="display:none;position:sticky;top:0;z-index:9998;background:#111827;border-bottom:1px solid #334155;padding:8px;text-align:center">
+  <button id="installBtn" style="background:#16a34a;min-height:42px;padding:9px 14px">📲 INSTALAR SCOUT</button>
+  <span id="netStatus" class="small" style="margin-left:8px">Online</span>
+</div>
+<div class="wrap">
 <div class="card">
-<h1>⚽ SCOUT AO VIVO <span class="small">BETA 3</span></h1>
+<h1>⚽ SCOUT AO VIVO</h1>
+<button id="alwaysInstallBtn" class="install-fixed" type="button">📲 INSTALAR APP</button>
 <div class="teams"><input id="home" value="Rio Claro"><div class="score"><span id="hs">0</span> × <span id="as">0</span></div><input id="away" value="Adversário"></div>
-
-<div class="label" style="margin-top:12px">EQUIPE ANALISADA</div>
-<div class="toggle">
-<button id="anHome" class="active" onclick="setAnalyzed('home')">Rio Claro</button>
-<button id="anAway" onclick="setAnalyzed('away')">Adversário</button>
+<div class="analyzed-wrap">
+ <div class="analyzed-title">EQUIPE ANALISADA</div>
+ <div class="analyzed-choice">
+  <button id="analyzedHomeBtn" type="button" data-action="selectAnalyzed" data-side="home">Rio Claro</button>
+  <button id="analyzedAwayBtn" type="button" data-action="selectAnalyzed" data-side="away">Adversário</button>
+ </div>
+ <div id="analyzedNote" class="analyzed-note"></div>
 </div>
-
-<div class="label" style="margin-top:12px">POSSE DE BOLA</div>
-<div class="toggle">
-<button id="posHome" class="active" onclick="setPossession('home')">Rio Claro</button>
-<button id="posAway" class="pos-away" onclick="setPossession('away')">Adversário</button>
-</div>
-
 <div class="clock" id="clock">00:00</div><div class="period" id="period">1º TEMPO</div>
 <div class="controls" style="margin-top:10px">
-<button class="green" onclick="start()">▶ INICIAR</button><button onclick="pause()">⏸ PAUSAR</button>
-<button class="blue" onclick="nextPeriod()">2º TEMPO</button><button onclick="resetClock()">↺ ZERAR</button>
+<button class="green" data-action="start">▶ INICIAR</button><button data-action="pause">⏸ PAUSAR</button>
+<button class="blue" data-action="nextPeriod">2º TEMPO</button><button data-action="resetClock">↺ ZERAR</button>
 </div></div>
 
-<div class="card"><div class="events">
-<button class="event green" onclick="addAnalyzed('Recuperação')">🟢 RECUPERAÇÃO</button>
-<button class="event red" onclick="addAnalyzed('Perda')">🔴 PERDA</button>
-<button id="shotBtn" class="event blue" onclick="addImportantPossession('Finalização')">⚽ FINALIZAÇÃO</button>
-<button class="event blue" onclick="addAnalyzed('Passe-chave')">🎯 PASSE-CHAVE</button>
-<button class="event green" onclick="addAnalyzed('Transição ofensiva')">⬆ TRANS. OFENSIVA</button>
-<button class="event red" onclick="addAnalyzed('Transição defensiva')">⬇ TRANS. DEFENSIVA</button>
-<button class="event amber" onclick="addPossession('Bola parada')">🚩 BOLA PARADA</button>
-<button class="event amber" onclick="toggleMoment()">★ MOMENTO</button>
-<div id="momentOptions" class="moment-options" style="grid-column:1/-1">
-<button class="green" onclick="addMoment('Momento ofensivo')">⬆ OFENSIVO</button>
-<button class="red" onclick="addMoment('Momento defensivo')">⬇ DEFENSIVO</button>
+
+<div id="halfSavedBadge" class="small" style="display:none;text-align:center;margin:8px 0;padding:8px;border:1px solid #16a34a;border-radius:8px;color:#bbf7d0">
+✅ 1º tempo salvo automaticamente
 </div>
-<button id="goalBtn" class="event goal" style="grid-column:1/-1" onclick="goal()">⚽ GOL</button>
+
+<div class="card"><div class="events">
+<button class="event green" data-action="add" data-type="Recuperação">🟢 RECUPERAÇÃO</button>
+<button class="event red" data-action="add" data-type="Perda">🔴 PERDA</button>
+<button class="event orange" data-action="submenu" data-type="Finalização" data-options="Fora|No alvo">⚽ FINALIZAÇÃO</button>
+<div class="possession-panel">
+<div class="possession-head">
+<button class="event green" data-action="possessionHome">⚽ POSSE DE BOLA</button>
+<div id="possessionLive" class="possession-live">⏸ Posse parada</div>
+</div>
+<button class="rhythm-toggle" data-action="toggleRhythm">⚙ RITMO DE PASSE: <b id="rhythmLabel">NORMAL</b><span class="arrow">▾</span></button>
+<div id="rhythmMenu" class="rhythm">
+<button data-action="setRhythm" data-rhythm="Lento">LENTO</button>
+<button class="active" data-action="setRhythm" data-rhythm="Normal">NORMAL</button>
+<button data-action="setRhythm" data-rhythm="Rápido">RÁPIDO</button>
+</div>
+<div class="possession-mini">
+<div><span id="analyzedPossLabel">Equipe analisada</span><br><b id="homePossPct">0%</b></div>
+<div><span id="opponentPossLabel">Adversário</span><br><b id="awayPossPct">0%</b></div>
+</div>
+<div class="auto-posse-note">Toque no botão grande POSSE para alternar equipe analisada ↔ adversário. Finalização e Gol seguem a posse atual.</div>
+</div>
+
+<button class="event lime" data-action="add" data-type="Transição ofensiva">⬆ TRANS. OFENSIVA</button>
+<button class="event indigo" data-action="add" data-type="Transição defensiva">⬇ TRANS. DEFENSIVA</button>
+<button class="event cyan" data-action="submenu" data-type="Escanteio" data-options="A favor|Contra">🚩 ESCANTEIO</button>
+<button class="event rose" data-action="submenu" data-type="Falta" data-options="A favor|Contra">🟨 FALTA</button>
+<button class="event blue" data-action="submenu" data-type="Saída de bola" data-options="Curta|Longa">⚽ SAÍDA DE BOLA</button>
+<button class="event purple" data-action="submenu" data-type="Momento" data-options="Ofensivo|Defensivo">★ MOMENTO</button>
+<button class="event goal" style="grid-column:1/-1" data-action="goalMenu">⚽ GOL</button>
 </div></div>
 
 <div class="card"><b>CONTADORES</b><div id="stats" class="stats" style="margin-top:8px"></div></div>
-
-<div class="card">
-<b>EVOLUÇÃO POR BLOCOS DE 15'</b>
-<div class="small" style="margin-top:5px">Atualização automática conforme os registros.</div>
-<div id="periodBlocks"></div>
-</div>
-
 <div class="card"><b>ÚLTIMOS EVENTOS</b><div id="history" class="history"><div class="small" style="padding:8px">Nenhum evento registrado.</div></div></div>
 <div class="footer">
-<button onclick="undo()">↶ DESFAZER</button><button class="blue" onclick="downloadCSV()">💾 EXPORTAR CSV</button><button onclick="clearAll()">🗑 LIMPAR</button>
+<button data-action="undo">↶ DESFAZER</button><button class="blue" data-action="report">📊 RELATÓRIO 1ºT</button><button class="green" data-action="finalScout">🏁 SCOUT FINAL</button><button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button><button id="clearBtn" data-action="clearAll">🗑 LIMPAR</button>
 </div>
-<div class="small" style="text-align:center;margin:10px">Finalização, Gol e Momento salvam também o início sugerido do vídeo 15s antes.</div>
-</div>
-<script>
-let seconds=0,timer=null,period=1,events=[],analyzed='home',possession='home';
-const types=['Recuperação','Perda','Finalização','Passe-chave','Transição ofensiva','Transição defensiva','Bola parada','Momento ofensivo','Momento defensivo','Gol'];
 
-function teamName(key){return ((key==='home'?home.value:away.value)|| (key==='home'?'Casa':'Visitante')).trim()}
-function fmt(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
-function renderClock(){clock.textContent=fmt(seconds);document.getElementById('period').textContent=period+'º TEMPO'}
-function start(){if(!timer)timer=setInterval(()=>{seconds++;renderClock()},1000)}
+<div id="compatStatus" class="small" style="text-align:center;margin:8px 0;padding:8px;border:1px solid #334155;border-radius:8px">
+Carregando controles…
+</div>
+
+
+
+
+<div id="installHelp" class="install-help"></div>
+<div class="version-tag">Scout ao Vivo • Beta V6.7 • Gol amarelo</div>
+<div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
+</div>
+
+
+<div id="finalScoutOverlay" class="final-overlay">
+  <div class="final-sheet">
+    <h2>🏁 Scout Final da Partida</h2>
+    <div id="finalMatchTitle" class="final-sub"></div>
+    <table class="final-table">
+      <thead>
+        <tr><th>Indicador</th><th>1ºT</th><th>2ºT</th><th>Jogo</th></tr>
+      </thead>
+      <tbody id="finalScoutBody"></tbody>
+    </table>
+    <div class="final-actions">
+      <button class="blue" data-action="downloadCSV">💾 EXPORTAR CSV</button>
+      <button data-action="closeFinalScout">FECHAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="submenuOverlay" class="submenu-overlay" >
+  <div class="submenu-box">
+    <div id="submenuTitle" class="submenu-title">Selecionar</div>
+    <div id="submenuOptions" class="submenu-options"></div>
+    <button class="submenu-cancel" data-action="closeSubmenu">CANCELAR</button>
+  </div>
+</div>
+
+
+<div id="reportOverlay" class="report-overlay">
+  <div class="report-sheet" id="reportSheet">
+    <div class="report-head">
+      <div>
+        <div class="report-badge">⚽ ANÁLISE DE DESEMPENHO</div><div class="report-title">Relatório do Intervalo</div>
+        <div id="reportTeams" style="font-weight:700;margin-top:4px"></div>
+        <div id="reportPeriod" style="font-size:13px;color:#64748b"></div>
+      </div>
+      <div class="report-score" id="reportScore">0 × 0</div>
+    </div>
+    <div id="reportGrid" class="report-grid"></div>
+    <div class="insights">
+      <b>Destaques automáticos</b>
+      <div id="reportInsights"></div>
+    </div>
+    <table class="report-table">
+      <thead><tr><th>Indicador</th><th>Total</th><th>Detalhamento</th></tr></thead>
+      <tbody id="reportTableBody"></tbody>
+    </table>
+    <div class="report-note">Scout ao Vivo • Relatório gerado a partir dos eventos registrados durante a partida.</div><div class="report-actions">
+      <button class="blue" data-action="shareReport">📤 COMPARTILHAR</button><button class="green" data-action="imageReport">🖼 GERAR IMAGEM</button>
+      <button data-action="printReport">🖨 IMPRIMIR / PDF</button>
+      <button data-action="closeReport">FECHAR</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="imagePreviewOverlay" class="image-preview-overlay">
+  <div class="image-preview-box">
+    <img id="generatedReportImage" alt="Relatório do intervalo">
+    <div class="image-preview-actions">
+      <button class="green" data-action="shareGeneratedImage">📤 COMPARTILHAR IMAGEM</button>
+      <button class="blue" data-action="downloadGeneratedImage">⬇ BAIXAR PNG</button>
+      <button data-action="closeImagePreview">FECHAR</button>
+    </div>
+    <div class="small" style="color:#cbd5e1;padding-bottom:20px">
+      Se preferir, toque e segure a imagem para usar as opções do Android.
+    </div>
+  </div>
+</div>
+
+<script>
+let seconds=0,timer=null,period=1,events=[];
+let possessionSide='none', possessionRhythm='Normal';
+let homePossSeconds=0, awayPossSeconds=0;
+let rhythmSeconds={Lento:0,Normal:0,Rápido:0};
+let firstHalfSnapshot=null;
+let analyzedSide=localStorage.getItem('scoutAnalyzedSide')||'home';
+let possessionTicker=null;
+const PASS_SECONDS={Lento:3,Normal:2,Rápido:1.5};
+
+const types=['Recuperação','Perda','Finalização','Transição ofensiva','Transição defensiva','Escanteio','Falta','Saída de bola','Momento','Gol'];
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function renderClock(){document.getElementById('clock').textContent=fmt(seconds);document.getElementById('period').textContent=period+'º TEMPO'}
+function start(){
+  if(!timer)timer=setInterval(()=>{seconds++;renderClock();if(seconds%5===0)save()},1000);
+  ensurePossessionTicker();
+}
+function ensurePossessionTicker(){
+  if(!possessionTicker) possessionTicker=setInterval(()=>{
+    if(!timer) return;
+    if(possessionSide==='home'){
+      homePossSeconds++;
+      rhythmSeconds[possessionRhythm]=(rhythmSeconds[possessionRhythm]||0)+1;
+    } else if(possessionSide==='away'){
+      awayPossSeconds++;
+    }
+    renderPossession();
+  },1000);
+}
+
 function pause(){clearInterval(timer);timer=null}
 function resetClock(){pause();seconds=0;renderClock()}
-function nextPeriod(){pause();period=2;seconds=0;renderClock()}
 
-function syncTeamLabels(){
- anHome.textContent=teamName('home'); anAway.textContent=teamName('away');
- posHome.textContent=teamName('home'); posAway.textContent=teamName('away');
- updatePossessionButtons();
+function buildPossessionSnapshot(){
+  return {
+    homePossSeconds,
+    awayPossSeconds,
+    rhythmSeconds:{...rhythmSeconds},
+    estimatedPasses:estimatedPasses()
+  };
 }
-home.addEventListener('input',syncTeamLabels);away.addEventListener('input',syncTeamLabels);
+function possessionPctFromSnapshot(s){
+  if(!s) return {home:0,away:0};
+  const total=(s.homePossSeconds||0)+(s.awayPossSeconds||0);
+  return {
+    home: total?Math.round((s.homePossSeconds||0)/total*100):0,
+    away: total?Math.round((s.awayPossSeconds||0)/total*100):0
+  };
+}
+function saveFirstHalf(){
+  if(firstHalfSnapshot) return;
+  firstHalfSnapshot=buildPossessionSnapshot();
+  localStorage.setItem('scoutFirstHalf',JSON.stringify(firstHalfSnapshot));
+  const badge=document.getElementById('halfSavedBadge');
+  if(badge) badge.style.display='block';
+}
+function resetLiveForSecondHalf(){
+  homePossSeconds=0;
+  awayPossSeconds=0;
+  rhythmSeconds={Lento:0,Normal:0,Rápido:0};
+  possessionRhythm='Normal';
+  possessionSide='none';
+}
+function nextPeriod(){
+  if(period===2) return;
+  pause();
+  saveFirstHalf();
+  period=2;
+  seconds=0;
+  resetLiveForSecondHalf();
+  renderClock();
+  renderPossession();
+  render();
+  save();
+}
 
-function setAnalyzed(key){
- analyzed=key;
- anHome.classList.toggle('active',key==='home');
- anAway.classList.toggle('active',key==='away');
- saveState();
-}
-function setPossession(key){
- possession=key;
- posHome.classList.toggle('active',key==='home');
- posAway.classList.toggle('active',key==='away');
- updatePossessionButtons();
- saveState();
-}
-function updatePossessionButtons(){
- shotBtn.innerHTML='⚽ FINALIZAÇÃO<br><span class="small" style="color:white">'+teamName(possession)+'</span>';
- goalBtn.innerHTML='⚽ GOL — '+teamName(possession);
-}
-function toggleMoment(){momentOptions.classList.toggle('show')}
-function pushEvent(type,key,important=false){
- const videoStart=important?fmt(seconds-15):'';
- events.push({
-   tempo:fmt(seconds),
-   segundos:seconds,
-   periodo:period+'ºT',
-   periodo_num:period,
-   evento:type,
-   equipe:teamName(key),
-   equipe_chave:key,
-   inicio_video:videoStart
- });
- save();render();
-}
-function addAnalyzed(type){pushEvent(type,analyzed,false)}
-function addPossession(type){pushEvent(type,possession,false)}
-function addImportantPossession(type){pushEvent(type,possession,true)}
-function addMoment(type){pushEvent(type,analyzed,true);momentOptions.classList.remove('show')}
 
-function goal(){
- pushEvent('Gol',possession,true);
- if(possession==='home') hs.textContent=Number(hs.textContent)+1;
- else as.textContent=Number(as.textContent)+1;
- saveState();
+function teamName(side){
+ return (document.getElementById(side==='home'?'home':'away').value||(side==='home'?'Casa':'Visitante')).trim();
 }
+function analyzedTeamName(){return teamName(analyzedSide)}
+function opponentTeamName(){return teamName(analyzedSide==='home'?'away':'home')}
+function refreshAnalyzedUI(){
+ const hb=document.getElementById('analyzedHomeBtn'),ab=document.getElementById('analyzedAwayBtn');
+ if(!hb||!ab)return;
+ hb.textContent=teamName('home');ab.textContent=teamName('away');
+ hb.classList.toggle('selected',analyzedSide==='home');ab.classList.toggle('selected',analyzedSide==='away');
+ const n=document.getElementById('analyzedNote');
+ if(n)n.innerHTML=`🟢 <b>${analyzedTeamName()}</b> = equipe analisada • ${opponentTeamName()} = adversário`;
+ const hl=document.getElementById('analyzedPossLabel'), al=document.getElementById('opponentPossLabel');
+ if(hl)hl.textContent=analyzedTeamName();
+ if(al)al.textContent=opponentTeamName();
+}
+function selectAnalyzed(side){
+ analyzedSide=(side==='away')?'away':'home';
+ localStorage.setItem('scoutAnalyzedSide',analyzedSide);
+ refreshAnalyzedUI();
+ renderPossession();
+ save();
+}
+
+function add(type,detail='',teamOverride=''){
+  const important=(type==='Finalização'||type==='Gol'||type==='Momento');
+  events.push({
+    tempo:fmt(seconds),
+    segundos:seconds,
+    periodo:period+'ºT',
+    periodoNum:period,
+    evento:type,
+    detalhe:detail,
+    equipe:teamOverride || analyzedTeamName() || 'Equipe',
+    inicio_video:important?fmt(Math.max(0,seconds-15)):''
+  });
+  save();
+  render();
+}
+
+
+function setPossession(side){
+  possessionSide=side;
+  ensurePossessionTicker();
+  renderPossession();
+  save();
+}
+function toggleRhythm(){
+  const menu=document.getElementById('rhythmMenu');
+  if(menu) menu.classList.toggle('open');
+}
+function setRhythm(r){
+  possessionRhythm=r;
+  document.querySelectorAll('[data-action="setRhythm"]').forEach(b=>b.classList.toggle('active',b.dataset.rhythm===r));
+  const menu=document.getElementById('rhythmMenu');
+  if(menu) menu.classList.remove('open');
+  renderPossession();
+  save();
+}
+function possessionHome(){
+  const ourSide=analyzedSide;
+  const oppSide=analyzedSide==='home'?'away':'home';
+  const next=(possessionSide===ourSide)?oppSide:ourSide;
+  setPossession(next);
+  add('Posse de bola', next===ourSide?'Equipe analisada':'Adversário', teamName(next));
+}
+function stopPossession(){
+  possessionSide='none';
+  renderPossession();
+  save();
+}
+function possessionPct(){
+  const total=homePossSeconds+awayPossSeconds;
+  return {
+    home: total?Math.round(homePossSeconds/total*100):0,
+    away: total?Math.round(awayPossSeconds/total*100):0
+  };
+}
+function estimatedPasses(){
+  let total=0;
+  Object.keys(rhythmSeconds).forEach(r=>{
+    total += (rhythmSeconds[r]||0)/PASS_SECONDS[r];
+  });
+  return Math.round(total);
+}
+function renderPossession(){
+  const p=possessionPct();
+  const analyzedPct=analyzedSide==='home'?p.home:p.away;
+  const opponentPct=analyzedSide==='home'?p.away:p.home;
+  const hp=document.getElementById('homePossPct'), ap=document.getElementById('awayPossPct'), live=document.getElementById('possessionLive');
+  if(hp) hp.textContent=analyzedPct+'%';
+  if(ap) ap.textContent=opponentPct+'%';
+  const aLabel=document.getElementById('analyzedPossLabel');
+  const oLabel=document.getElementById('opponentPossLabel');
+  if(aLabel) aLabel.textContent=analyzedTeamName()||'Equipe analisada';
+  if(oLabel) oLabel.textContent=opponentTeamName()||'Adversário';
+  const rl=document.getElementById('rhythmLabel');
+  if(rl) rl.textContent=possessionRhythm.toUpperCase();
+
+  const possBtn=document.querySelector('[data-action="possessionHome"]');
+  if(possessionSide==='none'){
+    if(live) live.textContent='⏸ Posse parada';
+    if(possBtn){possBtn.innerHTML='⚽ POSSE DE BOLA'; possBtn.classList.add('green'); possBtn.classList.remove('red');}
+  }else if(possessionSide===analyzedSide){
+    if(live) live.textContent='🟢 '+analyzedTeamName();
+    if(possBtn){possBtn.innerHTML='⚽ POSSE: '+analyzedTeamName(); possBtn.classList.add('green'); possBtn.classList.remove('red');}
+  }else{
+    if(live) live.textContent='🔴 '+opponentTeamName();
+    if(possBtn){possBtn.innerHTML='⚽ POSSE: '+opponentTeamName(); possBtn.classList.add('red'); possBtn.classList.remove('green');}
+  }
+  document.querySelectorAll('[data-action="setRhythm"]').forEach(b=>b.classList.toggle('active',b.dataset.rhythm===possessionRhythm));
+}
+
+let submenuType='';
+
+function registerGoalByPossession(){
+  const side=possessionSide==='none'?analyzedSide:possessionSide;
+  registerGoal(side);
+}
+
+function openGoalMenu(){
+  submenuType='Gol';
+  const homeName=(document.getElementById('home').value||'Casa').trim();
+  const awayName=(document.getElementById('away').value||'Visitante').trim();
+  document.getElementById('submenuTitle').textContent='Gol de qual equipe?';
+  const box=document.getElementById('submenuOptions');
+  box.innerHTML='';
+
+  const h=document.createElement('button');
+  h.textContent=homeName;
+  h.className=analyzedSide==='home'?'green':'red';
+  h.dataset.action='goalTeam';
+  h.dataset.side='home';
+
+  const a=document.createElement('button');
+  a.textContent=awayName;
+  a.className=analyzedSide==='away'?'green':'red';
+  a.dataset.action='goalTeam';
+  a.dataset.side='away';
+
+  box.appendChild(h);
+  box.appendChild(a);
+  document.getElementById('submenuOverlay').style.display='flex';
+}
+
+function registerGoal(side){
+  const homeName=(document.getElementById('home').value||'Casa').trim();
+  const awayName=(document.getElementById('away').value||'Visitante').trim();
+  if(side==='home'){
+    const hsEl=document.getElementById('hs');
+    hsEl.textContent=Number(hsEl.textContent)+1;
+    add('Gol','Casa',homeName);
+    setPossession(analyzedSide==='home'?'away':'home');
+  }else{
+    const asEl=document.getElementById('as');
+    asEl.textContent=Number(asEl.textContent)+1;
+    add('Gol','Visitante',awayName);
+    setPossession(analyzedSide==='away'?'away':'home');
+  }
+  closeSubmenu();
+  save();
+  render();
+}
+
+function openSubmenu(type,options){
+  submenuType=type;
+  document.getElementById('submenuTitle').textContent=type;
+  const box=document.getElementById('submenuOptions');
+  box.innerHTML='';
+  options.forEach(opt=>{
+    const b=document.createElement('button');
+    b.textContent=opt;
+    b.className= type==='Finalização'
+      ? (opt==='No alvo' ? 'green' : 'red')
+      : type==='Momento'
+        ? (opt==='Ofensivo' ? 'green' : 'red')
+        : (opt==='A favor' ? 'green' : 'red');
+    b.dataset.action='suboption'; b.dataset.option=opt;
+    box.appendChild(b);
+  });
+  document.getElementById('submenuOverlay').style.display='flex';
+}
+function selectSubmenu(option){
+  const type=submenuType;
+  const ourSide=analyzedSide;
+  const oppSide=analyzedSide==='home'?'away':'home';
+
+  if(type==='Finalização'){
+    const side=possessionSide==='none'?ourSide:possessionSide;
+    add('Finalização',option,teamName(side));
+  }else if(type==='Momento'){
+    add('Momento',option,analyzedTeamName());
+  }else{
+    add(type,option);
+    if(type==='Escanteio' || type==='Falta'){
+      setPossession(option==='A favor'?ourSide:oppSide);
+    }
+  }
+  closeSubmenu();
+}
+function closeSubmenu(){
+  document.getElementById('submenuOverlay').style.display='none';
+  submenuType='';
+}
+function overlayClose(e){
+  if(e.target.id==='submenuOverlay') closeSubmenu();
+}
+
+function goal(){add('Gol');const hsEl=document.getElementById('hs');hsEl.textContent=Number(hsEl.textContent)+1;save();render()}
 function undo(){
- if(events.length){
-   let e=events.pop();
-   if(e.evento==='Gol'){
-     if(e.equipe_chave==='home')hs.textContent=Math.max(0,Number(hs.textContent)-1);
-     else as.textContent=Math.max(0,Number(as.textContent)-1);
-   }
-   save();render()
- }
+  if(events.length){
+    let e=events.pop();
+    if(e.evento==='Gol'){
+      const hsEl=document.getElementById('hs');
+      const asEl=document.getElementById('as');
+      if(e.detalhe==='Visitante') asEl.textContent=Math.max(0,Number(asEl.textContent)-1);
+      else hsEl.textContent=Math.max(0,Number(hsEl.textContent)-1);
+    }
+    save();
+    render();
+  }
 }
+let clearArmed=false, clearTimer=null;
 function clearAll(){
- if(confirm('Apagar todos os eventos deste scout?')){
-   events=[];hs.textContent=0;as.textContent=0;save();render()
- }
+  const btn=document.getElementById('clearBtn');
+  if(!clearArmed){
+    clearArmed=true;
+    btn.textContent='⚠ TOQUE NOVAMENTE';
+    btn.style.background='#dc2626';
+    clearTimer=setTimeout(()=>{
+      clearArmed=false;
+      btn.textContent='🗑 LIMPAR';
+      btn.style.background='';
+    },3000);
+    return;
+  }
+  clearTimeout(clearTimer);
+  pause();
+  events=[];
+  seconds=0;
+  possessionSide='none';homePossSeconds=0;awayPossSeconds=0;rhythmSeconds={Lento:0,Normal:0,Rápido:0};possessionRhythm='Normal';
+  period=1;
+  document.getElementById('hs').textContent='0';
+  document.getElementById('as').textContent='0';
+  localStorage.removeItem('scoutEvents');
+  localStorage.removeItem('scoutScore');
+  localStorage.removeItem('scoutAwayScore');
+  localStorage.removeItem('scoutPossession');
+  localStorage.removeItem('scoutFirstHalf');
+  localStorage.removeItem('scoutMatchState');
+  localStorage.removeItem('scoutAnalyzedSide');
+  analyzedSide='home';
+  refreshAnalyzedUI();
+  firstHalfSnapshot=null;
+  const hb=document.getElementById('halfSavedBadge');if(hb)hb.style.display='none';
+  renderClock();
+  renderPossession();
+  render();
+  clearArmed=false;
+  btn.textContent='🗑 LIMPAR';
+  btn.style.background='';
 }
 function render(){
- let c={};types.forEach(t=>c[t]=0);events.forEach(e=>c[e.evento]=(c[e.evento]||0)+1);
- let visible=['Recuperação','Perda','Finalização','Passe-chave','Transição ofensiva','Transição defensiva','Bola parada','Gol'];
- stats.innerHTML=visible.map(t=>`<div class="stat"><b>${c[t]||0}</b>${t}</div>`).join('');
- history.innerHTML=events.length?events.slice().reverse().map(e=>`<div class="row"><b>${e.tempo}</b> · ${e.periodo} · ${e.evento}<br><span class="small">${e.equipe}${e.inicio_video?` · <span class="video">vídeo desde ${e.inicio_video}</span>`:''}</span></div>`).join(''):'<div class="small" style="padding:8px">Nenhum evento registrado.</div>';
- renderBlocks();
-}
-function renderBlocks(){
- const metrics=['Recuperação','Perda','Finalização','Transição ofensiva','Transição defensiva','Gol'];
- const maxP=Math.max(period,...events.map(e=>e.periodo_num||1));
- let rows=[];
- for(let p=1;p<=maxP;p++){
-   const pe=events.filter(e=>(e.periodo_num||1)===p);
-   const maxSec=Math.max(p===period?seconds:0,...pe.map(e=>e.segundos||0),0);
-   const blocks=Math.max(1,Math.ceil((maxSec+1)/900));
-   for(let b=0;b<blocks;b++){
-     const ini=b*900,fim=(b+1)*900;
-     const be=pe.filter(e=>(e.segundos||0)>=ini&&(e.segundos||0)<fim);
-     rows.push(`<tr><td>${p}ºT ${b*15}–${(b+1)*15}'</td>`+
-       metrics.map(m=>`<td>${be.filter(e=>e.evento===m).length}</td>`).join('')+'</tr>');
-   }
- }
- periodBlocks.innerHTML='<table class="period-table"><thead><tr><th>Bloco</th><th>Rec.</th><th>Perda</th><th>Fin.</th><th>T.Of.</th><th>T.Def.</th><th>Gol</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+const currentEvents=events.filter(e=>e.periodo===period+'ºT');
+let c={};types.forEach(t=>c[t]=0);currentEvents.forEach(e=>c[e.evento]=(c[e.evento]||0)+1);
+const statsEl=document.getElementById('stats');
+const historyEl=document.getElementById('history');
+statsEl.innerHTML=types.map(t=>`<div class="stat"><b>${c[t]}</b>${t}</div>`).join('');
+historyEl.innerHTML=currentEvents.length
+? currentEvents.slice().reverse().map(e=>`<div class="row"><b>${e.tempo}</b> · ${e.periodo} · ${e.evento}${e.detalhe?` <b>(${e.detalhe})</b>`:''}<br><span class="small">${e.equipe}</span></div>`).join('')
+: '<div class="small" style="padding:8px">Nenhum evento registrado neste período.</div>';
 }
 function save(){
- localStorage.setItem('scoutEventsBeta3',JSON.stringify(events));
- saveState();
-}
-function saveState(){
- localStorage.setItem('scoutStateBeta3',JSON.stringify({
-   hs:hs.textContent,as:as.textContent,home:home.value,away:away.value,
-   analyzed,possession,seconds,period
- }));
+ localStorage.setItem('scoutEvents',JSON.stringify(events));
+ localStorage.setItem('scoutHomeName',document.getElementById('home').value);
+ localStorage.setItem('scoutAwayName',document.getElementById('away').value);
+ localStorage.setItem('scoutAnalyzedSide',analyzedSide);
+ localStorage.setItem('scoutScore',document.getElementById('hs').textContent);
+ localStorage.setItem('scoutAwayScore',document.getElementById('as').textContent);
+ localStorage.setItem('scoutPossession',JSON.stringify({homePossSeconds,awayPossSeconds,rhythmSeconds,possessionRhythm,possessionSide}));
+ localStorage.setItem('scoutMatchState',JSON.stringify({period,seconds}));
+ if(firstHalfSnapshot) localStorage.setItem('scoutFirstHalf',JSON.stringify(firstHalfSnapshot));
 }
 function load(){
  try{
-   events=JSON.parse(localStorage.getItem('scoutEventsBeta3'))||[];
-   let s=JSON.parse(localStorage.getItem('scoutStateBeta3'))||{};
-   hs.textContent=s.hs||0; as.textContent=s.as||0;
-   if(s.home)home.value=s.home;if(s.away)away.value=s.away;
-   seconds=Number(s.seconds)||0;period=Number(s.period)||1;
-   setAnalyzed(s.analyzed||'home');setPossession(s.possession||'home');
- }catch(e){}
- syncTeamLabels();render();renderClock();
+   events=JSON.parse(localStorage.getItem('scoutEvents'))||[];
+   document.getElementById('home').value=localStorage.getItem('scoutHomeName')||document.getElementById('home').value;
+   document.getElementById('away').value=localStorage.getItem('scoutAwayName')||document.getElementById('away').value;
+   analyzedSide=localStorage.getItem('scoutAnalyzedSide')||'home';
+   document.getElementById('hs').textContent=localStorage.getItem('scoutScore')||0;
+   document.getElementById('as').textContent=localStorage.getItem('scoutAwayScore')||0;
+   const ms=JSON.parse(localStorage.getItem('scoutMatchState')||'null');
+   if(ms){period=ms.period||1;seconds=ms.seconds||0;}
+   firstHalfSnapshot=JSON.parse(localStorage.getItem('scoutFirstHalf')||'null');
+   if(firstHalfSnapshot){
+     const badge=document.getElementById('halfSavedBadge');
+     if(badge) badge.style.display='block';
+   }
+   const ps=JSON.parse(localStorage.getItem('scoutPossession')||'null');
+   if(ps){
+     homePossSeconds=ps.homePossSeconds||0;awayPossSeconds=ps.awayPossSeconds||0;
+     rhythmSeconds=ps.rhythmSeconds||{Lento:0,Normal:0,Rápido:0};
+     possessionRhythm=ps.possessionRhythm||'Normal';
+     possessionSide='none';
+   }
+    refreshAnalyzedUI();
+}catch(e){}
+ render();renderPossession();ensurePossessionTicker();
 }
-function downloadCSV(){
- let rows=[['Tempo','Periodo','Evento','Equipe','Inicio_video_15s'],
- ...events.map(e=>[e.tempo,e.periodo,e.evento,e.equipe,e.inicio_video||''])];
- let csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\n');
- let a=document.createElement('a');
- a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
- a.download='scout_'+teamName(analyzed).replace(/\s+/g,'_')+'.csv';
- a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+function downloadCSV(){let rows=[['Tempo','Periodo','Evento','Detalhe','Equipe'],...events.map(e=>[e.tempo,e.periodo,e.evento,e.detalhe||'',e.equipe])];
+const pp=possessionPct();
+const csvE1=eventCountsFor(events.filter(e=>e.periodo==='1ºT'));
+const csvE2=eventCountsFor(events.filter(e=>e.periodo==='2ºT'));
+const csvET=addCounts(csvE1,csvE2);
+const csvP1=possessionPctFromSnapshot(firstHalfSnapshot);
+const csvS2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+const csvP2=possessionPctFromSnapshot(csvS2);
+const csvST=combinedPossessionSnapshot();
+const csvPT=possessionPctFromSnapshot(csvST);
+rows.push([]);
+rows.push(['RESUMO POSSE','','','','']);
+rows.push(['Nossa posse',pp.home+'%','','','']);
+rows.push(['Posse adversária',pp.away+'%','','','']);
+rows.push(['Tempo nossa posse',fmt(homePossSeconds),'','','']);
+rows.push(['Tempo posse adversária',fmt(awayPossSeconds),'','','']);
+rows.push(['Ritmo lento',fmt(rhythmSeconds.Lento),'','','']);
+rows.push(['Ritmo normal',fmt(rhythmSeconds.Normal),'','','']);
+rows.push(['Ritmo rápido',fmt(rhythmSeconds.Rápido),'','','']);
+rows.push(['Passes estimados','~'+estimatedPasses(),'','','']);
+rows.push([]);
+rows.push(['SCOUT FINAL','1ºT','2ºT','JOGO','']);
+rows.push(['Posse',csvP1.home+'% x '+csvP1.away+'%',csvP2.home+'% x '+csvP2.away+'%',csvPT.home+'% x '+csvPT.away+'%','']);
+rows.push(['Passes estimados','~'+(firstHalfSnapshot?.estimatedPasses||0),'~'+(csvS2.estimatedPasses||0),'~'+(csvST.estimatedPasses||0),'']);
+rows.push(['Finalizações',csvE1.fin,csvE2.fin,csvET.fin,'']);
+rows.push(['Recuperações',csvE1.rec,csvE2.rec,csvET.rec,'']);
+rows.push(['Perdas',csvE1.perda,csvE2.perda,csvET.perda,'']);
+rows.push(['Transições ofensivas',csvE1.to,csvE2.to,csvET.to,'']);
+rows.push(['Transições defensivas',csvE1.td,csvE2.td,csvET.td,'']);
+rows.push(['Escanteios a favor',csvE1.escFav,csvE2.escFav,csvET.escFav,'']);
+rows.push(['Escanteios contra',csvE1.escCon,csvE2.escCon,csvET.escCon,'']);
+rows.push(['Faltas a favor',csvE1.faltFav,csvE2.faltFav,csvET.faltFav,'']);
+rows.push(['Faltas contra',csvE1.faltCon,csvE2.faltCon,csvET.faltCon,'']);
+rows.push(['Saídas curtas',csvE1.sbCurta,csvE2.sbCurta,csvET.sbCurta,'']);
+rows.push(['Saídas longas',csvE1.sbLonga,csvE2.sbLonga,csvET.sbLonga,'']);
+
+let csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\n');
+let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='scout_'+(document.getElementById('home').value||'equipe').replace(/\s+/g,'_')+'.csv';a.click()}
+
+function handleAction(el){
+  const action=el.dataset.action;
+  if(!action) return;
+  if(action==='selectAnalyzed') selectAnalyzed(el.dataset.side);
+  else if(action==='start') start();
+  else if(action==='pause') pause();
+  else if(action==='nextPeriod') nextPeriod();
+  else if(action==='resetClock') resetClock();
+  else if(action==='undo') undo();
+  else if(action==='downloadCSV') downloadCSV();
+  else if(action==='report') openReport();
+  else if(action==='finalScout') openFinalScout();
+  else if(action==='closeFinalScout') closeFinalScout();
+  else if(action==='shareReport') shareReport();
+  else if(action==='imageReport') imageReport();
+  else if(action==='shareGeneratedImage') shareGeneratedImage();
+  else if(action==='downloadGeneratedImage') downloadGeneratedImage();
+  else if(action==='closeImagePreview') closeImagePreview();
+  else if(action==='printReport') window.print();
+  else if(action==='closeReport') closeReport();
+  else if(action==='clearAll') clearAll();
+  else if(action==='goalMenu') registerGoalByPossession();
+  else if(action==='goalTeam') registerGoal(el.dataset.side);
+  else if(action==='add'){
+    const t=el.dataset.type;
+    add(t);
+    if(t==='Perda') setPossession(analyzedSide==='home'?'away':'home');
+    else if(t==='Recuperação') setPossession(analyzedSide);
+  }
+  else if(action==='possessionHome') possessionHome();
+  else if(action==='toggleRhythm') toggleRhythm();
+  else if(action==='setRhythm') setRhythm(el.dataset.rhythm);
+  else if(action==='submenu'){
+    const opts=(el.dataset.options||'').split('|').filter(Boolean);
+    openSubmenu(el.dataset.type,opts);
+  }
+  else if(action==='suboption') selectSubmenu(el.dataset.option);
+  else if(action==='closeSubmenu') closeSubmenu();
 }
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}))}
-load();
-</script></body></html>
+
+let lastTap=0;
+document.addEventListener('pointerup',function(e){
+  const el=e.target.closest('[data-action]');
+  if(!el) return;
+  e.preventDefault();
+  lastTap=Date.now();
+  handleAction(el);
+},{passive:false});
+
+document.addEventListener('click',function(e){
+  if(Date.now()-lastTap<500) return;
+  const el=e.target.closest('[data-action]');
+  if(!el) return;
+  e.preventDefault();
+  handleAction(el);
+});
+
+document.getElementById('submenuOverlay').addEventListener('pointerup',function(e){
+  if(e.target.id==='submenuOverlay') closeSubmenu();
+});
+
+window.addEventListener('load',()=>{
+  const s=document.getElementById('compatStatus');
+  s.textContent='✅ Controles carregados — toque em INICIAR para testar.';
+});
+
+
+
+function eventCountsFor(arr){
+  const g=(type,detail)=>countEvent(arr,type,detail);
+  return {
+    fin:g('Finalização'), finAlvo:g('Finalização','No alvo'), finFora:g('Finalização','Fora'),
+    rec:g('Recuperação'), perda:g('Perda'),
+    to:g('Transição ofensiva'), td:g('Transição defensiva'),
+    escFav:g('Escanteio','A favor'), escCon:g('Escanteio','Contra'),
+    faltFav:g('Falta','A favor'), faltCon:g('Falta','Contra'),
+    sbCurta:g('Saída de bola','Curta'), sbLonga:g('Saída de bola','Longa'),
+    err:g('Momento'), gol:g('Gol')
+  };
+}
+function addCounts(a,b){
+  const o={}; Object.keys(a).forEach(k=>o[k]=(a[k]||0)+(b[k]||0)); return o;
+}
+function currentSecondHalfSnapshot(){
+  return buildPossessionSnapshot();
+}
+function combinedPossessionSnapshot(){
+  const a=firstHalfSnapshot||{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+  const b=currentSecondHalfSnapshot();
+  return {
+    homePossSeconds:(a.homePossSeconds||0)+(b.homePossSeconds||0),
+    awayPossSeconds:(a.awayPossSeconds||0)+(b.awayPossSeconds||0),
+    rhythmSeconds:{
+      Lento:(a.rhythmSeconds?.Lento||0)+(b.rhythmSeconds?.Lento||0),
+      Normal:(a.rhythmSeconds?.Normal||0)+(b.rhythmSeconds?.Normal||0),
+      Rápido:(a.rhythmSeconds?.Rápido||0)+(b.rhythmSeconds?.Rápido||0)
+    },
+    estimatedPasses:(a.estimatedPasses||0)+(b.estimatedPasses||0)
+  };
+}
+function openFinalScout(){
+  pause();
+  if(period===1) saveFirstHalf();
+
+  const e1=events.filter(e=>e.periodo==='1ºT');
+  const e2=events.filter(e=>e.periodo==='2ºT');
+  const c1=eventCountsFor(e1), c2=eventCountsFor(e2), ct=addCounts(c1,c2);
+
+  const p1=possessionPctFromSnapshot(firstHalfSnapshot);
+  const s2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+  const p2=possessionPctFromSnapshot(s2);
+  const st=combinedPossessionSnapshot();
+  const pt=possessionPctFromSnapshot(st);
+
+  const fmtPair=(a,b)=>`${a} / ${b}`;
+  const rows=[
+    ['Posse de bola',`${p1.home}% x ${p1.away}%`,`${p2.home}% x ${p2.away}%`,`${pt.home}% x ${pt.away}%`],
+    ['Passes estimados',`~${firstHalfSnapshot?.estimatedPasses||0}`,`~${s2.estimatedPasses||0}`,`~${st.estimatedPasses||0}`],
+    ['Finalizações',c1.fin,c2.fin,ct.fin],
+    ['No alvo',c1.finAlvo,c2.finAlvo,ct.finAlvo],
+    ['Fora',c1.finFora,c2.finFora,ct.finFora],
+    ['Recuperações',c1.rec,c2.rec,ct.rec],
+    ['Perdas',c1.perda,c2.perda,ct.perda],
+    ['Transições ofensivas',c1.to,c2.to,ct.to],
+    ['Transições defensivas',c1.td,c2.td,ct.td],
+    ['Escanteios (favor/contra)',fmtPair(c1.escFav,c1.escCon),fmtPair(c2.escFav,c2.escCon),fmtPair(ct.escFav,ct.escCon)],
+    ['Faltas (favor/contra)',fmtPair(c1.faltFav,c1.faltCon),fmtPair(c2.faltFav,c2.faltCon),fmtPair(ct.faltFav,ct.faltCon)],
+    ['Saída curta',c1.sbCurta,c2.sbCurta,ct.sbCurta],
+    ['Saída longa',c1.sbLonga,c2.sbLonga,ct.sbLonga],
+    ['Momentos marcados',c1.err,c2.err,ct.err],
+    ['Gols',c1.gol,c2.gol,ct.gol]
+  ];
+  document.getElementById('finalMatchTitle').textContent=
+    `${document.getElementById('home').value||'Equipe'} ${document.getElementById('hs').textContent} x ${document.getElementById('as').textContent} ${document.getElementById('away').value||'Adversário'}`;
+  document.getElementById('finalScoutBody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><b>${r[3]}</b></td></tr>`).join('');
+  document.getElementById('finalScoutOverlay').style.display='block';
+  save();
+}
+function closeFinalScout(){
+  document.getElementById('finalScoutOverlay').style.display='none';
+}
+
+function subsetForPeriod(p){
+  return events.filter(e=>e.periodo===p+'ºT');
+}
+function countEvent(arr,type,detail){
+  return arr.filter(e=>e.evento===type && (!detail || e.detalhe===detail)).length;
+}
+function pct(a,b){return b?Math.round((a/b)*100):0}
+function reportCard(title,total,leftLabel,leftVal,rightLabel,rightVal){
+  let extra='';
+  if(leftLabel||rightLabel){
+    const denom=(leftVal||0)+(rightVal||0);
+    extra=`<div class="small">${leftLabel||''}: <b>${leftVal||0}</b> &nbsp; ${rightLabel||''}: <b>${rightVal||0}</b></div>`;
+    if(denom){
+      extra+=`<div class="bar"><span style="width:${pct(leftVal,denom)}%"></span></div><div class="small">${pct(leftVal,denom)}% ${leftLabel||''}</div>`;
+    }
+  }
+  return `<div class="report-card"><h3>${title}</h3><div class="report-big">${total}</div>${extra}</div>`;
+}
+function openReport(){
+  pause();
+  const p=period===2?1:period; // intervalo usa 1ºT; se estiver no 1ºT, usa o período atual
+  const arr=subsetForPeriod(p);
+  const fin=countEvent(arr,'Finalização');
+  const finAlvo=countEvent(arr,'Finalização','No alvo');
+  const finFora=countEvent(arr,'Finalização','Fora');
+  const esc=countEvent(arr,'Escanteio');
+  const escFav=countEvent(arr,'Escanteio','A favor');
+  const escCon=countEvent(arr,'Escanteio','Contra');
+  const falt=countEvent(arr,'Falta');
+  const faltFav=countEvent(arr,'Falta','A favor');
+  const faltCon=countEvent(arr,'Falta','Contra');
+  const sb=countEvent(arr,'Saída de bola');
+  const sbCurta=countEvent(arr,'Saída de bola','Curta');
+  const sbLonga=countEvent(arr,'Saída de bola','Longa');
+  const rec=countEvent(arr,'Recuperação');
+  const perda=countEvent(arr,'Perda');
+  const to=countEvent(arr,'Transição ofensiva');
+  const td=countEvent(arr,'Transição defensiva');
+  const poss=possessionPct(); const estPass=estimatedPasses();
+  const err=countEvent(arr,'Momento');
+
+  document.getElementById('reportTeams').textContent=(document.getElementById('home').value||'Equipe')+' x '+(document.getElementById('away').value||'Adversário');
+  document.getElementById('reportScore').textContent=document.getElementById('hs').textContent+' × '+document.getElementById('as').textContent;
+  document.getElementById('reportPeriod').textContent=p+'º tempo';
+  document.getElementById('reportGrid').innerHTML=[
+    reportCard('Finalizações',fin,'No alvo',finAlvo,'Fora',finFora),
+    reportCard('Saídas de bola',sb,'Curtas',sbCurta,'Longas',sbLonga),
+    reportCard('Escanteios',esc,'A favor',escFav,'Contra',escCon),
+    reportCard('Faltas',falt,'A favor',faltFav,'Contra',faltCon),
+    reportCard('Recuperações',rec),
+    reportCard('Perdas',perda),
+    reportCard('Transições ofensivas',to),
+    reportCard('Transições defensivas',td),
+    reportCard('Posse de bola',poss.home,'Nossa %',poss.home,'Adversário %',poss.away),
+    reportCard('Passes estimados',estPass)
+  ].join('');
+
+  const rows=[
+    ['Finalizações',fin,`${finAlvo} no alvo / ${finFora} fora`],
+    ['Escanteios',esc,`${escFav} a favor / ${escCon} contra`],
+    ['Faltas',falt,`${faltFav} a favor / ${faltCon} contra`],
+    ['Saídas de bola',sb,`${sbCurta} curtas / ${sbLonga} longas`],
+    ['Recuperações',rec,'—'],
+    ['Perdas',perda,'—'],
+    ['Transições ofensivas',to,'—'],
+    ['Transições defensivas',td,'—'],
+    ['Posse de bola',poss.home+'%',`Adversário ${poss.away}%`],
+    ['Passes estimados',estPass,`Lento ${fmt(rhythmSeconds.Lento)} / Normal ${fmt(rhythmSeconds.Normal)} / Rápido ${fmt(rhythmSeconds.Rápido)}`],
+    ['Momentos marcados',err,'—']
+  ];
+  document.getElementById('reportTableBody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
+
+  const insights=[];
+  if(fin) insights.push(`Finalização: ${pct(finAlvo,fin)}% das finalizações foram no alvo.`);
+  if(sb) insights.push(`Saída de bola: ${pct(sbCurta,sb)}% das saídas registradas foram curtas.`);
+  if(esc) insights.push(`Escanteios: ${escFav} a favor e ${escCon} contra.`);
+  if(rec||perda) insights.push(`Balanço de posse: ${rec} recuperações e ${perda} perdas registradas.`);
+  if(to||td) insights.push(`Transições: ${to} ofensivas e ${td} defensivas registradas.`);
+  if(!insights.length) insights.push('Ainda não há eventos suficientes para gerar destaques.');
+  document.getElementById('reportInsights').innerHTML=insights.map(x=>`<p>• ${x}</p>`).join('');
+  document.getElementById('reportOverlay').style.display='block';
+}
+function closeReport(){document.getElementById('reportOverlay').style.display='none'}
+
+
+let generatedImageDataUrl='';
+
+function imageReport(){
+  try{
+    const p=period===2?1:period;
+    const arr=subsetForPeriod(p);
+
+    const homeName=document.getElementById('home').value||'Equipe';
+    const awayName=document.getElementById('away').value||'Adversário';
+    const score=document.getElementById('hs').textContent+' x '+document.getElementById('as').textContent;
+
+    const fin=countEvent(arr,'Finalização');
+    const finAlvo=countEvent(arr,'Finalização','No alvo');
+    const finFora=countEvent(arr,'Finalização','Fora');
+    const escFav=countEvent(arr,'Escanteio','A favor');
+    const escCon=countEvent(arr,'Escanteio','Contra');
+    const faltFav=countEvent(arr,'Falta','A favor');
+    const faltCon=countEvent(arr,'Falta','Contra');
+    const sb=countEvent(arr,'Saída de bola');
+    const sbCurta=countEvent(arr,'Saída de bola','Curta');
+    const sbLonga=countEvent(arr,'Saída de bola','Longa');
+    const rec=countEvent(arr,'Recuperação');
+    const perda=countEvent(arr,'Perda');
+    const to=countEvent(arr,'Transição ofensiva');
+    const td=countEvent(arr,'Transição defensiva');
+    const poss=possessionPct(); const estPass=estimatedPasses();
+    const err=countEvent(arr,'Momento');
+
+    const W=1080, H=1600;
+    const canvas=document.createElement('canvas');
+    canvas.width=W; canvas.height=H;
+    const ctx=canvas.getContext('2d');
+
+    ctx.fillStyle='#f4f7f5';
+    ctx.fillRect(0,0,W,H);
+    for(let i=0;i<8;i++){
+      ctx.fillStyle=i%2===0?'#edf4ef':'#f7faf8';
+      ctx.fillRect(i*(W/8),0,W/8,H);
+    }
+
+    ctx.fillStyle='#173f2a';
+    ctx.fillRect(0,0,W,205);
+    ctx.fillStyle='#ffffff';
+    ctx.font='700 28px Arial';
+    ctx.fillText('ANÁLISE DE DESEMPENHO',54,55);
+    ctx.font='800 46px Arial';
+    ctx.fillText('RELATÓRIO DO INTERVALO',54,112);
+    ctx.font='600 27px Arial';
+    fitText(ctx,homeName+'  '+score+'  '+awayName,54,160,970,27);
+    ctx.font='400 20px Arial';
+    ctx.fillText(p+'º TEMPO',54,190);
+
+    const cards=[
+      ['FINALIZAÇÕES',fin,`${finAlvo} no alvo  •  ${finFora} fora`],
+      ['SAÍDAS DE BOLA',sb,`${sbCurta} curtas  •  ${sbLonga} longas`],
+      ['ESCANTEIOS',escFav+escCon,`${escFav} a favor  •  ${escCon} contra`],
+      ['FALTAS',faltFav+faltCon,`${faltFav} a favor  •  ${faltCon} contra`],
+      ['RECUPERAÇÕES',rec,''],
+      ['PERDAS',perda,''],
+      ['TRANSIÇÕES OFENSIVAS',to,''],
+      ['TRANSIÇÕES DEFENSIVAS',td,'']
+    ];
+
+    const cw=468,ch=145,gap=36;
+    cards.forEach((c,i)=>{
+      const col=i%2,row=Math.floor(i/2);
+      const x=54+col*(cw+gap);
+      const y=245+row*(ch+24);
+      ctx.fillStyle='#ffffff';
+      ctx.strokeStyle='#c9d5cd';
+      ctx.lineWidth=2;
+      roundRect(ctx,x,y,cw,ch,18,true,true);
+      ctx.fillStyle='#315440';
+      ctx.font='700 20px Arial';
+      ctx.fillText(c[0],x+22,y+34);
+      ctx.fillStyle='#102e20';
+      ctx.font='800 46px Arial';
+      ctx.fillText(String(c[1]),x+22,y+88);
+      if(c[2]){
+        ctx.fillStyle='#607067';
+        ctx.font='400 18px Arial';
+        fitText(ctx,c[2],x+22,y+119,cw-44,18);
+      }
+    });
+
+    ctx.fillStyle='#173f2a';
+    ctx.font='800 26px Arial';
+    ctx.fillText('INDICADORES-CHAVE',54,950);
+
+    drawCanvasBar(ctx,'Finalizações',finAlvo,finFora,'No alvo','Fora',995);
+    drawCanvasBar(ctx,'Saída de bola',sbCurta,sbLonga,'Curta','Longa',1110);
+
+    ctx.fillStyle='#173f2a';
+    ctx.font='800 26px Arial';
+    ctx.fillText('DESTAQUES',54,1245);
+
+    const lines=[];
+    if(fin) lines.push(`• ${pct(finAlvo,fin)}% das finalizações foram no alvo.`);
+    if(sb) lines.push(`• ${pct(sbCurta,sb)}% das saídas de bola foram curtas.`);
+    if(escFav+escCon) lines.push(`• Escanteios: ${escFav} a favor e ${escCon} contra.`);
+    if(rec||perda) lines.push(`• Recuperações: ${rec}  |  Perdas: ${perda}.`);
+    if(to||td) lines.push(`• Transições: ${to} ofensivas e ${td} defensivas.`);
+    lines.push(`• Posse: ${poss.home}% x ${poss.away}%  |  Passes estimados: ~${estPass}.`);
+    if(err) lines.push(`• Momentos marcados: ${err}.`);
+    if(!lines.length) lines.push('• Ainda não há eventos suficientes para gerar destaques.');
+
+    ctx.fillStyle='#25382d';
+    ctx.font='400 21px Arial';
+    lines.slice(0,5).forEach((t,i)=>ctx.fillText(t,65,1290+i*42));
+
+    ctx.fillStyle='#758178';
+    ctx.font='400 16px Arial';
+    ctx.fillText('Scout ao Vivo • Relatório gerado a partir dos eventos registrados na partida.',54,1550);
+
+    generatedImageDataUrl=canvas.toDataURL('image/png');
+    document.getElementById('generatedReportImage').src=generatedImageDataUrl;
+    document.getElementById('imagePreviewOverlay').style.display='block';
+  }catch(e){
+    console.error(e);
+    alert('Erro ao gerar imagem: '+(e && e.message ? e.message : 'erro desconhecido'));
+  }
+}
+
+function drawCanvasBar(ctx,label,a,b,aLabel,bLabel,yPos){
+  const total=a+b;
+  const ratio=total?a/total:0;
+  ctx.fillStyle='#263d30';
+  ctx.font='700 20px Arial';
+  ctx.fillText(label,54,yPos);
+  ctx.fillStyle='#dce7df';
+  roundRect(ctx,54,yPos+18,972,28,14,true,false);
+  if(total){
+    ctx.fillStyle='#2e6848';
+    roundRect(ctx,54,yPos+18,972*ratio,28,14,true,false);
+  }
+  ctx.fillStyle='#52635a';
+  ctx.font='400 18px Arial';
+  const pctA=total?Math.round(ratio*100):0;
+  ctx.fillText(`${aLabel}: ${a} (${pctA}%)   •   ${bLabel}: ${b}`,54,yPos+72);
+}
+
+function fitText(ctx,text,x,y,maxWidth,startSize){
+  let size=startSize;
+  while(size>12){
+    ctx.font=`600 ${size}px Arial`;
+    if(ctx.measureText(text).width<=maxWidth) break;
+    size--;
+  }
+  ctx.fillText(text,x,y);
+}
+
+function dataUrlToBlob(dataUrl){
+  const parts=dataUrl.split(',');
+  const mime=parts[0].match(/:(.*?);/)[1];
+  const bin=atob(parts[1]);
+  const len=bin.length;
+  const arr=new Uint8Array(len);
+  for(let i=0;i<len;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+
+async function shareGeneratedImage(){
+  if(!generatedImageDataUrl){alert('Gere a imagem primeiro.');return;}
+  try{
+    const blob=dataUrlToBlob(generatedImageDataUrl);
+    const name=(document.getElementById('home').value||'equipe').replace(/\s+/g,'_');
+    const file=new File([blob],`relatorio_intervalo_${name}.png`,{type:'image/png'});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({files:[file],title:'Relatório do Intervalo'});
+    }else{
+      alert('Compartilhamento de arquivo não disponível. Use BAIXAR PNG.');
+    }
+  }catch(e){
+    if(e && e.name!=='AbortError') alert('Não foi possível compartilhar. Use BAIXAR PNG.');
+  }
+}
+
+function downloadGeneratedImage(){
+  if(!generatedImageDataUrl){alert('Gere a imagem primeiro.');return;}
+  const name=(document.getElementById('home').value||'equipe').replace(/\s+/g,'_');
+  const a=document.createElement('a');
+  a.href=generatedImageDataUrl;
+  a.download=`relatorio_intervalo_${name}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function closeImagePreview(){
+  document.getElementById('imagePreviewOverlay').style.display='none';
+}
+
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  if(w<0) w=0;
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+  if(fill) ctx.fill();
+  if(stroke) ctx.stroke();
+}
+
+async function shareReport(){
+  const p=period===2?1:period;
+  const arr=subsetForPeriod(p);
+  const fin=countEvent(arr,'Finalização'), finAlvo=countEvent(arr,'Finalização','No alvo'), finFora=countEvent(arr,'Finalização','Fora');
+  const esc=countEvent(arr,'Escanteio'), escFav=countEvent(arr,'Escanteio','A favor'), escCon=countEvent(arr,'Escanteio','Contra');
+  const falt=countEvent(arr,'Falta'), faltFav=countEvent(arr,'Falta','A favor'), faltCon=countEvent(arr,'Falta','Contra');
+  const sb=countEvent(arr,'Saída de bola'), sbCurta=countEvent(arr,'Saída de bola','Curta'), sbLonga=countEvent(arr,'Saída de bola','Longa');
+  const rec=countEvent(arr,'Recuperação'), perda=countEvent(arr,'Perda');
+  const text=`RELATÓRIO DO INTERVALO\n${document.getElementById('home').value} ${document.getElementById('hs').textContent} x ${document.getElementById('as').textContent} ${document.getElementById('away').value}\n\nFinalizações: ${fin} (${finAlvo} no alvo / ${finFora} fora)\nEscanteios: ${escFav} a favor / ${escCon} contra\nFaltas: ${faltFav} a favor / ${faltCon} contra\nSaídas de bola: ${sbCurta} curtas / ${sbLonga} longas\nRecuperações: ${rec}\nPerdas: ${perda}\nPosse: ${possessionPct().home}% x ${possessionPct().away}%\nPasses estimados: ~${estimatedPasses()}`;
+  if(navigator.share){
+    try{await navigator.share({title:'Relatório do Intervalo',text});}catch(e){}
+  }else{
+    await navigator.clipboard.writeText(text);
+    alert('Resumo copiado. Cole no WhatsApp ou outro aplicativo.');
+  }
+}
+
+load();renderClock();
+
+let deferredInstallPrompt=null;
+
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  const btn=document.getElementById('installScoutBtn');
+  if(btn) btn.style.display='block';
+});
+
+window.addEventListener('appinstalled', ()=>{
+  deferredInstallPrompt=null;
+  const btn=document.getElementById('installScoutBtn');
+  if(btn) btn.style.display='none';
+});
+
+document.addEventListener('click', async (e)=>{
+  const btn=e.target.closest('#installScoutBtn');
+  if(!btn) return;
+  if(!deferredInstallPrompt){
+    alert('O Chrome ainda não liberou a instalação. Atualize a página uma vez e aguarde alguns segundos.');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  try{ await deferredInstallPrompt.userChoice; }catch(err){}
+  deferredInstallPrompt=null;
+  btn.style.display='none';
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js?v=67', {scope:'./'})
+      .then(reg=>reg.update())
+      .catch(err=>console.error('Falha ao registrar Service Worker:',err));
+  });
+}
+
+
+function diagSet(id,text,state){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=text;
+  el.className=state==='ok'?'diag-ok':state==='bad'?'diag-bad':'diag-warn';
+}
+
+async function runPwaDiagnostic(){
+  diagSet('diagHttps',location.protocol==='https:'?'OK':location.protocol,location.protocol==='https:'?'ok':'bad');
+
+  try{
+    const link=document.querySelector('link[rel="manifest"]');
+    if(!link){diagSet('diagManifest','Não encontrado','bad');}
+    else{
+      const res=await fetch(link.href,{cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const man=await res.json();
+      const pathOk=(man.start_url||'').includes('scout-ao-vivo-RC-');
+      const iconsOk=Array.isArray(man.icons)&&man.icons.some(i=>String(i.sizes).includes('192'))&&man.icons.some(i=>String(i.sizes).includes('512'));
+      diagSet('diagManifest',pathOk&&iconsOk?'OK':'Revisar start_url/ícones',pathOk&&iconsOk?'ok':'bad');
+    }
+  }catch(e){diagSet('diagManifest','Erro: '+e.message,'bad');}
+
+  if(!('serviceWorker' in navigator)){
+    diagSet('diagSw','Não suportado','bad');
+    diagSet('diagControlled','Não','bad');
+  }else{
+    try{
+      const reg=await navigator.serviceWorker.getRegistration();
+      diagSet('diagSw',reg?'Registrado':'Não registrado',reg?'ok':'bad');
+      diagSet('diagControlled',navigator.serviceWorker.controller?'Sim':'Não',navigator.serviceWorker.controller?'ok':'warn');
+    }catch(e){diagSet('diagSw','Erro','bad');}
+  }
+
+  if('caches' in window){
+    try{
+      const keys=await caches.keys();
+      const ok=keys.some(k=>k.includes('scout-aovivo'));
+      diagSet('diagCache',ok?'Disponível':'Ainda não',ok?'ok':'warn');
+    }catch(e){diagSet('diagCache','Erro','bad');}
+  }else{
+    diagSet('diagCache','Não suportado','bad');
+  }
+
+  diagSet('diagPrompt',deferredInstallPrompt?'Liberado pelo Chrome':'Não disparou',deferredInstallPrompt?'ok':'warn');
+}
+
+window.addEventListener('beforeinstallprompt',()=>{
+  setTimeout(()=>{
+    diagSet('diagPrompt','Liberado pelo Chrome','ok');
+    const btn=document.getElementById('installScoutBtn');
+    if(btn) btn.style.display='block';
+  },0);
+});
+
+window.addEventListener('appinstalled',()=>{
+  diagSet('diagPrompt','App instalado','ok');
+});
+
+window.addEventListener('load',()=>{
+  setTimeout(runPwaDiagnostic,1200);
+  setTimeout(runPwaDiagnostic,4000);
+});
+
+
+let persistentInstallPrompt=null;
+
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  persistentInstallPrompt=e;
+});
+
+window.addEventListener('appinstalled',()=>{
+  persistentInstallPrompt=null;
+  const help=document.getElementById('installHelp');
+  if(help){
+    help.style.display='block';
+    help.innerHTML='✅ Scout instalado com sucesso. Procure o ícone na tela inicial do aparelho.';
+  }
+});
+
+async function tryInstallApp(){
+  const help=document.getElementById('installHelp');
+  if(!help) return;
+
+  if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches){
+    help.style.display='block';
+    help.innerHTML='✅ O Scout já está aberto em modo aplicativo neste aparelho.';
+    return;
+  }
+
+  if(persistentInstallPrompt){
+    try{
+      persistentInstallPrompt.prompt();
+      const choice=await persistentInstallPrompt.userChoice;
+      if(choice && choice.outcome==='accepted'){
+        help.style.display='block';
+        help.innerHTML='✅ Instalação aceita. Aguarde o Android concluir.';
+      }else{
+        help.style.display='block';
+        help.innerHTML='Instalação cancelada. Você pode tentar novamente quando quiser.';
+      }
+      persistentInstallPrompt=null;
+      return;
+    }catch(e){
+      console.error(e);
+    }
+  }
+
+  help.style.display='block';
+  const ua=navigator.userAgent||'';
+  const isAndroid=/Android/i.test(ua);
+  const isChrome=/Chrome/i.test(ua) && !/EdgA|OPR/i.test(ua);
+  const isEdge=/EdgA/i.test(ua);
+  const isSamsung=/SamsungBrowser/i.test(ua);
+
+  let msg='⚠️ Este navegador não liberou a instalação automática neste aparelho.<br><br>';
+  if(isAndroid){
+    if(isChrome) msg+='No Chrome: abra o menu ⋮ e procure <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.';
+    else if(isEdge) msg+='No Edge: abra o menu e procure <b>Adicionar ao telefone</b> ou <b>Instalar este site como aplicativo</b>.';
+    else if(isSamsung) msg+='No Samsung Internet: abra o menu e procure <b>Adicionar página a → Tela inicial</b>.';
+    else msg+='Abra o menu do navegador e procure por <b>Adicionar à tela inicial</b>, <b>Instalar app</b> ou <b>Criar atalho</b>.';
+    msg+='<br><br>✅ O Scout continua funcionando offline neste aparelho mesmo sem instalação, desde que a página já tenha sido carregada uma vez.';
+  }else{
+    msg+='Procure no menu do navegador a opção de instalar este site como aplicativo.';
+  }
+  help.innerHTML=msg;
+}
+
+['home','away'].forEach(id=>{
+ const el=document.getElementById(id);
+ if(el)el.addEventListener('input',()=>{refreshAnalyzedUI();save();});
+});
+document.addEventListener('click',(e)=>{
+  if(e.target && e.target.id==='alwaysInstallBtn') tryInstallApp();
+});
+
+</script>
+<script>
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  const bar=document.getElementById('installBar');
+  if(bar) bar.style.display='block';
+});
+window.addEventListener('appinstalled',()=>{
+  const bar=document.getElementById('installBar');
+  if(bar) bar.style.display='none';
+});
+window.addEventListener('load',()=>{
+  const installBtn=document.getElementById('installBtn');
+  if(installBtn){
+    installBtn.addEventListener('click', async ()=>{
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt=null;
+      } else {
+        alert('Se a instalação não aparecer automaticamente, use o menu do navegador e procure por "Adicionar à tela inicial".');
+      }
+    });
+  }
+  function updateNet(){
+    const n=document.getElementById('netStatus');
+    if(n) n.textContent=navigator.onLine?'🟢 Online':'🟠 Offline';
+  }
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js?v=67',{scope:'./'}).then(()=>console.log('SW ok')).catch(console.error);
+  });
+}
+</script>
+
+</body></html>

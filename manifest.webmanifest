@@ -1,8 +1,8 @@
 {
-  "name": "Scout ao Vivo — Beta 3",
+  "name": "Scout ao Vivo — V6.7",
   "short_name": "Scout ao Vivo",
-  "description": "Painel de scout de futebol para análise ao vivo.",
-  "start_url": "./index.html",
+  "description": "Scout de futebol para análise ao vivo.",
+  "start_url": "./index.html?v=67",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f172a",
