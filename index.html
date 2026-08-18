@@ -127,9 +127,16 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 .analyzed-choice button.selected{background:#15803d;border-color:#22c55e;color:#fff}
 .analyzed-note{text-align:center;margin-top:6px;font-size:10px;color:#94a3b8}
 
+
+.ball-live-wrap{margin-top:10px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:9px}
+.ball-live-btn{min-height:46px;font-size:14px}
+.ball-live-time{font-size:18px;font-weight:800;min-width:78px;text-align:center}
+.report-period-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 12px}
+.report-period-tabs button{min-height:40px;padding:7px;font-size:12px;background:#64748b}
+.report-period-tabs button.active{background:#173f2a}
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest?v=68">
+<link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0f172a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Scout ao Vivo">
@@ -140,7 +147,7 @@ button:active{transform:scale(.98)}.event{min-height:68px;font-size:16px}.green{
 
 
 <style>
-/* V6.8: destaque inequívoco do botão GOL */
+/* V6.7: destaque inequívoco do botão GOL */
 button[data-action="goalMenu"]{
   background:#eab308 !important;
   color:#111827 !important;
@@ -177,7 +184,12 @@ button[data-action="submenu"][data-type="Momento"]{
 <div class="controls" style="margin-top:10px">
 <button class="green" data-action="start">▶ INICIAR</button><button data-action="pause">⏸ PAUSAR</button>
 <button class="blue" data-action="nextPeriod">2º TEMPO</button><button data-action="resetClock">↺ ZERAR</button>
-</div></div>
+</div>
+<div class="ball-live-wrap">
+  <button id="ballLiveBtn" class="ball-live-btn green" data-action="toggleBallLive">🟢 BOLA EM JOGO</button>
+  <div><div class="small" style="text-align:center">TEMPO EFETIVO</div><div id="effectiveClock" class="ball-live-time">00:00</div></div>
+</div>
+</div>
 
 
 <div id="halfSavedBadge" class="small" style="display:none;text-align:center;margin:8px 0;padding:8px;border:1px solid #16a34a;border-radius:8px;color:#bbf7d0">
@@ -229,7 +241,7 @@ Carregando controles…
 
 
 <div id="installHelp" class="install-help"></div>
-<div class="version-tag">Scout ao Vivo • Beta V6.8 • Gol amarelo</div>
+<div class="version-tag">Scout ao Vivo • Beta V6.12 • Tempo efetivo + relatórios por período</div>
 <div class="small" style="text-align:center;margin:10px">Os dados ficam neste navegador até você limpar o scout.</div>
 </div>
 
@@ -270,7 +282,12 @@ Carregando controles…
       </div>
       <div class="report-score" id="reportScore">0 × 0</div>
     </div>
-    <div id="reportGrid" class="report-grid"></div>
+    <div class="report-period-tabs">
+<button id="reportTab1" data-action="reportPeriod" data-period="1">1º TEMPO</button>
+<button id="reportTab2" data-action="reportPeriod" data-period="2">2º TEMPO</button>
+<button id="reportTabT" data-action="reportPeriod" data-period="total">TOTAL</button>
+</div>
+<div id="reportGrid" class="report-grid"></div>
     <div class="insights">
       <b>Destaques automáticos</b>
       <div id="reportInsights"></div>
@@ -304,6 +321,8 @@ Carregando controles…
 
 <script>
 let seconds=0,timer=null,period=1,events=[];
+let effectiveSeconds=0, ballInPlay=false;
+let reportViewPeriod=1;
 let possessionSide='none', possessionRhythm='Normal';
 let homePossSeconds=0, awayPossSeconds=0;
 let rhythmSeconds={Lento:0,Normal:0,Rápido:0};
@@ -316,12 +335,14 @@ const types=['Recuperação','Perda','Finalização','Transição ofensiva','Tra
 function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function renderClock(){document.getElementById('clock').textContent=fmt(seconds);document.getElementById('period').textContent=period+'º TEMPO'}
 function start(){
-  if(!timer)timer=setInterval(()=>{seconds++;renderClock();if(seconds%5===0)save()},1000);
+  if(!timer && seconds===0) ballInPlay=true;
+  renderEffectiveClock();
+  if(!timer)timer=setInterval(()=>{seconds++; if(ballInPlay) effectiveSeconds++; renderClock(); renderEffectiveClock(); save()},1000);
   ensurePossessionTicker();
 }
 function ensurePossessionTicker(){
   if(!possessionTicker) possessionTicker=setInterval(()=>{
-    if(!timer) return;
+    if(!timer || !ballInPlay) return;
     if(possessionSide==='home'){
       homePossSeconds++;
       rhythmSeconds[possessionRhythm]=(rhythmSeconds[possessionRhythm]||0)+1;
@@ -333,14 +354,25 @@ function ensurePossessionTicker(){
 }
 
 function pause(){clearInterval(timer);timer=null}
-function resetClock(){pause();seconds=0;renderClock()}
+function resetClock(){pause();seconds=0;effectiveSeconds=0;ballInPlay=false;renderClock();renderEffectiveClock()}
+
+function renderEffectiveClock(){
+  const el=document.getElementById('effectiveClock'); if(el) el.textContent=fmt(effectiveSeconds);
+  const b=document.getElementById('ballLiveBtn'); if(!b) return;
+  if(ballInPlay){ b.textContent='🟢 BOLA EM JOGO'; b.classList.add('green'); b.classList.remove('red'); }
+  else { b.textContent='🔴 BOLA PARADA'; b.classList.add('red'); b.classList.remove('green'); }
+}
+function setBallInPlay(v){ ballInPlay=!!v; renderEffectiveClock(); save(); }
+function toggleBallLive(){ setBallInPlay(!ballInPlay); }
+function autoStopBall(){ if(ballInPlay) setBallInPlay(false); }
 
 function buildPossessionSnapshot(){
   return {
     homePossSeconds,
     awayPossSeconds,
     rhythmSeconds:{...rhythmSeconds},
-    estimatedPasses:estimatedPasses()
+    estimatedPasses:estimatedPasses(),
+    effectiveSeconds:effectiveSeconds
   };
 }
 function possessionPctFromSnapshot(s){
@@ -364,6 +396,9 @@ function resetLiveForSecondHalf(){
   rhythmSeconds={Lento:0,Normal:0,Rápido:0};
   possessionRhythm='Normal';
   possessionSide='none';
+  effectiveSeconds=0;
+  ballInPlay=false;
+  renderEffectiveClock();
 }
 function nextPeriod(){
   if(period===2) return;
@@ -525,6 +560,7 @@ function openGoalMenu(){
 }
 
 function registerGoal(side){
+   autoStopBall();
   const homeName=(document.getElementById('home').value||'Casa').trim();
   const awayName=(document.getElementById('away').value||'Visitante').trim();
   if(side==='home'){
@@ -569,11 +605,16 @@ function selectSubmenu(option){
   if(type==='Finalização'){
     const side=possessionSide==='none'?ourSide:possessionSide;
     add('Finalização',option,teamName(side));
+    if(option==='Fora') autoStopBall();
+    // Após a finalização, troca automaticamente a posse para o outro time.
+    const nextSide = side==='home'?'away':'home';
+    setPossession(nextSide);
   }else if(type==='Momento'){
     add('Momento',option,analyzedTeamName());
   }else{
     add(type,option);
     if(type==='Escanteio' || type==='Falta'){
+      autoStopBall();
       setPossession(option==='A favor'?ourSide:oppSide);
     }
   }
@@ -659,7 +700,7 @@ function save(){
  localStorage.setItem('scoutScore',document.getElementById('hs').textContent);
  localStorage.setItem('scoutAwayScore',document.getElementById('as').textContent);
  localStorage.setItem('scoutPossession',JSON.stringify({homePossSeconds,awayPossSeconds,rhythmSeconds,possessionRhythm,possessionSide}));
- localStorage.setItem('scoutMatchState',JSON.stringify({period,seconds}));
+ localStorage.setItem('scoutMatchState',JSON.stringify({period,seconds,effectiveSeconds,ballInPlay}));
  if(firstHalfSnapshot) localStorage.setItem('scoutFirstHalf',JSON.stringify(firstHalfSnapshot));
 }
 function load(){
@@ -671,7 +712,7 @@ function load(){
    document.getElementById('hs').textContent=localStorage.getItem('scoutScore')||0;
    document.getElementById('as').textContent=localStorage.getItem('scoutAwayScore')||0;
    const ms=JSON.parse(localStorage.getItem('scoutMatchState')||'null');
-   if(ms){period=ms.period||1;seconds=ms.seconds||0;}
+   if(ms){period=ms.period||1;seconds=ms.seconds||0;effectiveSeconds=ms.effectiveSeconds||0;ballInPlay=!!ms.ballInPlay;}
    firstHalfSnapshot=JSON.parse(localStorage.getItem('scoutFirstHalf')||'null');
    if(firstHalfSnapshot){
      const badge=document.getElementById('halfSavedBadge');
@@ -686,7 +727,7 @@ function load(){
    }
     refreshAnalyzedUI();
 }catch(e){}
- render();renderPossession();ensurePossessionTicker();
+ render();renderPossession();renderEffectiveClock();ensurePossessionTicker();
 }
 function downloadCSV(){let rows=[['Tempo','Periodo','Evento','Detalhe','Equipe'],...events.map(e=>[e.tempo,e.periodo,e.evento,e.detalhe||'',e.equipe])];
 const pp=possessionPct();
@@ -694,7 +735,7 @@ const csvE1=eventCountsFor(events.filter(e=>e.periodo==='1ºT'));
 const csvE2=eventCountsFor(events.filter(e=>e.periodo==='2ºT'));
 const csvET=addCounts(csvE1,csvE2);
 const csvP1=possessionPctFromSnapshot(firstHalfSnapshot);
-const csvS2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+const csvS2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0,effectiveSeconds:0};
 const csvP2=possessionPctFromSnapshot(csvS2);
 const csvST=combinedPossessionSnapshot();
 const csvPT=possessionPctFromSnapshot(csvST);
@@ -711,8 +752,10 @@ rows.push(['Passes estimados','~'+estimatedPasses(),'','','']);
 rows.push([]);
 rows.push(['SCOUT FINAL','1ºT','2ºT','JOGO','']);
 rows.push(['Posse',csvP1.home+'% x '+csvP1.away+'%',csvP2.home+'% x '+csvP2.away+'%',csvPT.home+'% x '+csvPT.away+'%','']);
+rows.push(['Tempo efetivo',fmt(firstHalfSnapshot?.effectiveSeconds||0),fmt(csvS2.effectiveSeconds||0),fmt(csvST.effectiveSeconds||0),'']);
 rows.push(['Passes estimados','~'+(firstHalfSnapshot?.estimatedPasses||0),'~'+(csvS2.estimatedPasses||0),'~'+(csvST.estimatedPasses||0),'']);
-rows.push(['Finalizações',csvE1.fin,csvE2.fin,csvET.fin,'']);
+rows.push(['Finalizações nossa equipe',csvE1.finNossa,csvE2.finNossa,csvET.finNossa,'']);
+rows.push(['Finalizações adversário',csvE1.finAdv,csvE2.finAdv,csvET.finAdv,'']);
 rows.push(['Recuperações',csvE1.rec,csvE2.rec,csvET.rec,'']);
 rows.push(['Perdas',csvE1.perda,csvE2.perda,csvET.perda,'']);
 rows.push(['Transições ofensivas',csvE1.to,csvE2.to,csvET.to,'']);
@@ -735,6 +778,8 @@ function handleAction(el){
   else if(action==='pause') pause();
   else if(action==='nextPeriod') nextPeriod();
   else if(action==='resetClock') resetClock();
+   else if(action==='toggleBallLive') toggleBallLive();
+   else if(action==='reportPeriod') openReport(el.dataset.period);
   else if(action==='undo') undo();
   else if(action==='downloadCSV') downloadCSV();
   else if(action==='report') openReport();
@@ -798,7 +843,10 @@ window.addEventListener('load',()=>{
 function eventCountsFor(arr){
   const g=(type,detail)=>countEvent(arr,type,detail);
   return {
-    fin:g('Finalização'), finAlvo:g('Finalização','No alvo'), finFora:g('Finalização','Fora'),
+    fin:g('Finalização'),
+    finNossa:countEventTeam(arr,'Finalização',analyzedTeamName()),
+    finAdv:countEventTeam(arr,'Finalização',opponentTeamName()),
+    finAlvo:g('Finalização','No alvo'), finFora:g('Finalização','Fora'),
     rec:g('Recuperação'), perda:g('Perda'),
     to:g('Transição ofensiva'), td:g('Transição defensiva'),
     escFav:g('Escanteio','A favor'), escCon:g('Escanteio','Contra'),
@@ -814,7 +862,7 @@ function currentSecondHalfSnapshot(){
   return buildPossessionSnapshot();
 }
 function combinedPossessionSnapshot(){
-  const a=firstHalfSnapshot||{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+  const a=firstHalfSnapshot||{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0,effectiveSeconds:0};
   const b=currentSecondHalfSnapshot();
   return {
     homePossSeconds:(a.homePossSeconds||0)+(b.homePossSeconds||0),
@@ -824,7 +872,8 @@ function combinedPossessionSnapshot(){
       Normal:(a.rhythmSeconds?.Normal||0)+(b.rhythmSeconds?.Normal||0),
       Rápido:(a.rhythmSeconds?.Rápido||0)+(b.rhythmSeconds?.Rápido||0)
     },
-    estimatedPasses:(a.estimatedPasses||0)+(b.estimatedPasses||0)
+    estimatedPasses:(a.estimatedPasses||0)+(b.estimatedPasses||0),
+    effectiveSeconds:(a.effectiveSeconds||0)+(b.effectiveSeconds||0)
   };
 }
 function openFinalScout(){
@@ -836,7 +885,7 @@ function openFinalScout(){
   const c1=eventCountsFor(e1), c2=eventCountsFor(e2), ct=addCounts(c1,c2);
 
   const p1=possessionPctFromSnapshot(firstHalfSnapshot);
-  const s2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0};
+  const s2=period===2?currentSecondHalfSnapshot():{homePossSeconds:0,awayPossSeconds:0,rhythmSeconds:{Lento:0,Normal:0,Rápido:0},estimatedPasses:0,effectiveSeconds:0};
   const p2=possessionPctFromSnapshot(s2);
   const st=combinedPossessionSnapshot();
   const pt=possessionPctFromSnapshot(st);
@@ -844,9 +893,10 @@ function openFinalScout(){
   const fmtPair=(a,b)=>`${a} / ${b}`;
   const rows=[
     ['Posse de bola',`${p1.home}% x ${p1.away}%`,`${p2.home}% x ${p2.away}%`,`${pt.home}% x ${pt.away}%`],
+    ['Tempo efetivo',fmt(firstHalfSnapshot?.effectiveSeconds||0),fmt(s2.effectiveSeconds||0),fmt(st.effectiveSeconds||0)],
     ['Passes estimados',`~${firstHalfSnapshot?.estimatedPasses||0}`,`~${s2.estimatedPasses||0}`,`~${st.estimatedPasses||0}`],
-    ['Finalizações',c1.fin,c2.fin,ct.fin],
-    ['No alvo',c1.finAlvo,c2.finAlvo,ct.finAlvo],
+    ['Finalizações (nossa/adversário)',fmtPair(c1.finNossa,c1.finAdv),fmtPair(c2.finNossa,c2.finAdv),fmtPair(ct.finNossa,ct.finAdv)],
+    ['No alvo (total)',c1.finAlvo,c2.finAlvo,ct.finAlvo],
     ['Fora',c1.finFora,c2.finFora,ct.finFora],
     ['Recuperações',c1.rec,c2.rec,ct.rec],
     ['Perdas',c1.perda,c2.perda,ct.perda],
@@ -875,6 +925,13 @@ function subsetForPeriod(p){
 function countEvent(arr,type,detail){
   return arr.filter(e=>e.evento===type && (!detail || e.detalhe===detail)).length;
 }
+function countEventTeam(arr,type,team,detail){
+  return arr.filter(e=>
+    e.evento===type &&
+    e.equipe===team &&
+    (!detail || e.detalhe===detail)
+  ).length;
+}
 function pct(a,b){return b?Math.round((a/b)*100):0}
 function reportCard(title,total,leftLabel,leftVal,rightLabel,rightVal){
   let extra='';
@@ -887,11 +944,14 @@ function reportCard(title,total,leftLabel,leftVal,rightLabel,rightVal){
   }
   return `<div class="report-card"><h3>${title}</h3><div class="report-big">${total}</div>${extra}</div>`;
 }
-function openReport(){
+function openReport(requested){
   pause();
-  const p=period===2?1:period; // intervalo usa 1ºT; se estiver no 1ºT, usa o período atual
-  const arr=subsetForPeriod(p);
+  const p=requested||period;
+  reportViewPeriod=p;
+  const arr=(p==='total')?events.slice():subsetForPeriod(Number(p));
   const fin=countEvent(arr,'Finalização');
+  const finNossa=countEventTeam(arr,'Finalização',analyzedTeamName());
+  const finAdv=countEventTeam(arr,'Finalização',opponentTeamName());
   const finAlvo=countEvent(arr,'Finalização','No alvo');
   const finFora=countEvent(arr,'Finalização','Fora');
   const esc=countEvent(arr,'Escanteio');
@@ -907,14 +967,16 @@ function openReport(){
   const perda=countEvent(arr,'Perda');
   const to=countEvent(arr,'Transição ofensiva');
   const td=countEvent(arr,'Transição defensiva');
-  const poss=possessionPct(); const estPass=estimatedPasses();
+  const snap = p==='total' ? combinedPossessionSnapshot() : (Number(p)===1 ? (firstHalfSnapshot||buildPossessionSnapshot()) : currentSecondHalfSnapshot());
+  const poss=possessionPctFromSnapshot(snap); const estPass=snap.estimatedPasses||0;
   const err=countEvent(arr,'Momento');
 
   document.getElementById('reportTeams').textContent=(document.getElementById('home').value||'Equipe')+' x '+(document.getElementById('away').value||'Adversário');
   document.getElementById('reportScore').textContent=document.getElementById('hs').textContent+' × '+document.getElementById('as').textContent;
-  document.getElementById('reportPeriod').textContent=p+'º tempo';
+  document.getElementById('reportPeriod').textContent=p==='total'?'Jogo completo':p+'º tempo';
+  ['1','2','total'].forEach(v=>{const b=document.getElementById(v==='1'?'reportTab1':v==='2'?'reportTab2':'reportTabT');if(b)b.classList.toggle('active',String(p)===v);});
   document.getElementById('reportGrid').innerHTML=[
-    reportCard('Finalizações',fin,'No alvo',finAlvo,'Fora',finFora),
+    reportCard('Finalizações',fin,'Nossa equipe',finNossa,'Adversário',finAdv),
     reportCard('Saídas de bola',sb,'Curtas',sbCurta,'Longas',sbLonga),
     reportCard('Escanteios',esc,'A favor',escFav,'Contra',escCon),
     reportCard('Faltas',falt,'A favor',faltFav,'Contra',faltCon),
@@ -923,11 +985,13 @@ function openReport(){
     reportCard('Transições ofensivas',to),
     reportCard('Transições defensivas',td),
     reportCard('Posse de bola',poss.home,'Nossa %',poss.home,'Adversário %',poss.away),
-    reportCard('Passes estimados',estPass)
+    reportCard('Passes estimados',estPass),
+    reportCard('Tempo efetivo',fmt(snap.effectiveSeconds||0))
   ].join('');
 
   const rows=[
-    ['Finalizações',fin,`${finAlvo} no alvo / ${finFora} fora`],
+    ['Finalizações',fin,`${finNossa} nossa equipe / ${finAdv} adversário`],
+    ['Precisão das finalizações',finAlvo,`${finAlvo} no alvo / ${finFora} fora`],
     ['Escanteios',esc,`${escFav} a favor / ${escCon} contra`],
     ['Faltas',falt,`${faltFav} a favor / ${faltCon} contra`],
     ['Saídas de bola',sb,`${sbCurta} curtas / ${sbLonga} longas`],
@@ -936,13 +1000,14 @@ function openReport(){
     ['Transições ofensivas',to,'—'],
     ['Transições defensivas',td,'—'],
     ['Posse de bola',poss.home+'%',`Adversário ${poss.away}%`],
-    ['Passes estimados',estPass,`Lento ${fmt(rhythmSeconds.Lento)} / Normal ${fmt(rhythmSeconds.Normal)} / Rápido ${fmt(rhythmSeconds.Rápido)}`],
+    ['Tempo efetivo',fmt(snap.effectiveSeconds||0),'Bola rolando'],
+    ['Passes estimados',estPass,`Lento ${fmt(snap.rhythmSeconds?.Lento||0)} / Normal ${fmt(snap.rhythmSeconds?.Normal||0)} / Rápido ${fmt(snap.rhythmSeconds?.Rápido||0)}`],
     ['Momentos marcados',err,'—']
   ];
   document.getElementById('reportTableBody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
 
   const insights=[];
-  if(fin) insights.push(`Finalização: ${pct(finAlvo,fin)}% das finalizações foram no alvo.`);
+  if(fin) insights.push(`Finalizações: ${finNossa} da nossa equipe e ${finAdv} do adversário; ${pct(finAlvo,fin)}% do total foram no alvo.`);
   if(sb) insights.push(`Saída de bola: ${pct(sbCurta,sb)}% das saídas registradas foram curtas.`);
   if(esc) insights.push(`Escanteios: ${escFav} a favor e ${escCon} contra.`);
   if(rec||perda) insights.push(`Balanço de posse: ${rec} recuperações e ${perda} perdas registradas.`);
@@ -966,6 +1031,8 @@ function imageReport(){
     const score=document.getElementById('hs').textContent+' x '+document.getElementById('as').textContent;
 
     const fin=countEvent(arr,'Finalização');
+    const finNossa=countEventTeam(arr,'Finalização',analyzedTeamName());
+    const finAdv=countEventTeam(arr,'Finalização',opponentTeamName());
     const finAlvo=countEvent(arr,'Finalização','No alvo');
     const finFora=countEvent(arr,'Finalização','Fora');
     const escFav=countEvent(arr,'Escanteio','A favor');
@@ -979,7 +1046,8 @@ function imageReport(){
     const perda=countEvent(arr,'Perda');
     const to=countEvent(arr,'Transição ofensiva');
     const td=countEvent(arr,'Transição defensiva');
-    const poss=possessionPct(); const estPass=estimatedPasses();
+    const snap = p==='total' ? combinedPossessionSnapshot() : (Number(p)===1 ? (firstHalfSnapshot||buildPossessionSnapshot()) : currentSecondHalfSnapshot());
+  const poss=possessionPctFromSnapshot(snap); const estPass=snap.estimatedPasses||0;
     const err=countEvent(arr,'Momento');
 
     const W=1080, H=1600;
@@ -1007,7 +1075,7 @@ function imageReport(){
     ctx.fillText(p+'º TEMPO',54,190);
 
     const cards=[
-      ['FINALIZAÇÕES',fin,`${finAlvo} no alvo  •  ${finFora} fora`],
+      ['FINALIZAÇÕES',fin,`${finNossa} nossa equipe  •  ${finAdv} adversário`],
       ['SAÍDAS DE BOLA',sb,`${sbCurta} curtas  •  ${sbLonga} longas`],
       ['ESCANTEIOS',escFav+escCon,`${escFav} a favor  •  ${escCon} contra`],
       ['FALTAS',faltFav+faltCon,`${faltFav} a favor  •  ${faltCon} contra`],
@@ -1043,7 +1111,7 @@ function imageReport(){
     ctx.font='800 26px Arial';
     ctx.fillText('INDICADORES-CHAVE',54,950);
 
-    drawCanvasBar(ctx,'Finalizações',finAlvo,finFora,'No alvo','Fora',995);
+    drawCanvasBar(ctx,'Finalizações',finNossa,finAdv,'Nossa equipe','Adversário',995);
     drawCanvasBar(ctx,'Saída de bola',sbCurta,sbLonga,'Curta','Longa',1110);
 
     ctx.fillStyle='#173f2a';
@@ -1051,7 +1119,7 @@ function imageReport(){
     ctx.fillText('DESTAQUES',54,1245);
 
     const lines=[];
-    if(fin) lines.push(`• ${pct(finAlvo,fin)}% das finalizações foram no alvo.`);
+    if(fin) lines.push(`• Finalizações: ${finNossa} nossa equipe  |  ${finAdv} adversário.`);
     if(sb) lines.push(`• ${pct(sbCurta,sb)}% das saídas de bola foram curtas.`);
     if(escFav+escCon) lines.push(`• Escanteios: ${escFav} a favor e ${escCon} contra.`);
     if(rec||perda) lines.push(`• Recuperações: ${rec}  |  Perdas: ${perda}.`);
@@ -1163,12 +1231,16 @@ function roundRect(ctx,x,y,w,h,r,fill,stroke){
 async function shareReport(){
   const p=period===2?1:period;
   const arr=subsetForPeriod(p);
-  const fin=countEvent(arr,'Finalização'), finAlvo=countEvent(arr,'Finalização','No alvo'), finFora=countEvent(arr,'Finalização','Fora');
+  const fin=countEvent(arr,'Finalização'),
+        finNossa=countEventTeam(arr,'Finalização',analyzedTeamName()),
+        finAdv=countEventTeam(arr,'Finalização',opponentTeamName()),
+        finAlvo=countEvent(arr,'Finalização','No alvo'),
+        finFora=countEvent(arr,'Finalização','Fora');
   const esc=countEvent(arr,'Escanteio'), escFav=countEvent(arr,'Escanteio','A favor'), escCon=countEvent(arr,'Escanteio','Contra');
   const falt=countEvent(arr,'Falta'), faltFav=countEvent(arr,'Falta','A favor'), faltCon=countEvent(arr,'Falta','Contra');
   const sb=countEvent(arr,'Saída de bola'), sbCurta=countEvent(arr,'Saída de bola','Curta'), sbLonga=countEvent(arr,'Saída de bola','Longa');
   const rec=countEvent(arr,'Recuperação'), perda=countEvent(arr,'Perda');
-  const text=`RELATÓRIO DO INTERVALO\n${document.getElementById('home').value} ${document.getElementById('hs').textContent} x ${document.getElementById('as').textContent} ${document.getElementById('away').value}\n\nFinalizações: ${fin} (${finAlvo} no alvo / ${finFora} fora)\nEscanteios: ${escFav} a favor / ${escCon} contra\nFaltas: ${faltFav} a favor / ${faltCon} contra\nSaídas de bola: ${sbCurta} curtas / ${sbLonga} longas\nRecuperações: ${rec}\nPerdas: ${perda}\nPosse: ${possessionPct().home}% x ${possessionPct().away}%\nPasses estimados: ~${estimatedPasses()}`;
+  const text=`RELATÓRIO DO INTERVALO\n${document.getElementById('home').value} ${document.getElementById('hs').textContent} x ${document.getElementById('as').textContent} ${document.getElementById('away').value}\n\nFinalizações: ${finNossa} nossa equipe / ${finAdv} adversário (${finAlvo} no alvo / ${finFora} fora no total)\nEscanteios: ${escFav} a favor / ${escCon} contra\nFaltas: ${faltFav} a favor / ${faltCon} contra\nSaídas de bola: ${sbCurta} curtas / ${sbLonga} longas\nRecuperações: ${rec}\nPerdas: ${perda}\nPosse: ${possessionPct().home}% x ${possessionPct().away}%\nPasses estimados: ~${estimatedPasses()}`;
   if(navigator.share){
     try{await navigator.share({title:'Relatório do Intervalo',text});}catch(e){}
   }else{
@@ -1207,7 +1279,9 @@ document.addEventListener('click', async (e)=>{
   btn.style.display='none';
 });
 
-)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js?v=612', {scope:'./'})
       .then(reg=>reg.update())
       .catch(err=>console.error('Falha ao registrar Service Worker:',err));
   });
@@ -1385,56 +1459,27 @@ window.addEventListener('load',()=>{
   window.addEventListener('online',updateNet);
   window.addEventListener('offline',updateNet);
 });
-).then(()=>console.log('SW ok')).catch(console.error);
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js?v=612',{scope:'./'}).then(()=>console.log('SW ok')).catch(console.error);
   });
 }
 </script>
 
 
 <script>
-(function(){
-  if (!('serviceWorker' in navigator)) return;
-
-  let refreshing = false;
-
-  navigator.serviceWorker.addEventListener('controllerchange', function () {
-    if (refreshing) return;
-    refreshing = true;
-    location.reload();
-  });
-
-  window.addEventListener('load', async function () {
-    try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=68', {scope:'./'});
-      await reg.update();
-
-      if (reg.waiting) {
-        reg.waiting.postMessage({type:'SKIP_WAITING'});
-      }
-
-      reg.addEventListener('updatefound', function () {
-        const worker = reg.installing;
-        if (!worker) return;
-        worker.addEventListener('statechange', function () {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            worker.postMessage({type:'SKIP_WAITING'});
-          }
-        });
-      });
-
-      // Remove caches from older Scout versions.
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(
-          keys.filter(k => k.startsWith('scout-') && k !== 'scout-v6-8-20260813')
-              .map(k => caches.delete(k))
-        );
-      }
-    } catch (e) {
-      console.log('Atualização PWA:', e);
-    }
-  });
-})();
+/* V6.9 — persistência offline reforçada */
+window.addEventListener('beforeunload', function(){
+  try { if (typeof save === 'function') save(); } catch(e) {}
+});
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'hidden') {
+    try { if (typeof save === 'function') save(); } catch(e) {}
+  }
+});
+window.addEventListener('pagehide', function(){
+  try { if (typeof save === 'function') save(); } catch(e) {}
+});
 </script>
 
 </body></html>
